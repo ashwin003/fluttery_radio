@@ -4,8 +4,6 @@ import 'package:fluttery_radio/widgets/detailed_player.dart';
 import 'package:fluttery_radio/widgets/small_player.dart';
 import 'package:miniplayer/miniplayer.dart';
 
-import '../main.dart';
-
 const double playerMinHeight = 70;
 const double playerMaxHeight = 370;
 const miniplayerPercentageDeclaration = 0.2;
@@ -26,12 +24,6 @@ class _PlayerState extends State<Player> {
   final MiniplayerController controller = MiniplayerController();
 
   void onTap() {
-    if (!_isPlaying) {
-      audioHandler
-          .playFromUri(Uri.parse(widget._settingsController.station!.url));
-    } else {
-      audioHandler.stop();
-    }
     _isPlaying = !_isPlaying;
   }
 
