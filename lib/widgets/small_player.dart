@@ -64,15 +64,15 @@ class SmallPlayer extends StatelessWidget {
                         Text(_settingsController.station!.name,
                             style: Theme.of(context)
                                 .textTheme
-                                .bodyText2!
+                                .bodyMedium!
                                 .copyWith(fontSize: 16)),
                         Text(
                           _settingsController.station!.country,
                           style:
-                              Theme.of(context).textTheme.bodyText2!.copyWith(
+                              Theme.of(context).textTheme.bodyMedium!.copyWith(
                                     color: Theme.of(context)
                                         .textTheme
-                                        .bodyText2!
+                                        .bodyMedium!
                                         .color!
                                         .withOpacity(0.55),
                                   ),
