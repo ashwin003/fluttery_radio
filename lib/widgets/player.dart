@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fluttery_radio/controllers/settings_controller.dart';
+import 'package:fluttery_radio/main.dart';
 import 'package:fluttery_radio/widgets/detailed_player.dart';
 import 'package:fluttery_radio/widgets/small_player.dart';
 import 'package:miniplayer/miniplayer.dart';
@@ -24,7 +25,15 @@ class _PlayerState extends State<Player> {
   final MiniplayerController controller = MiniplayerController();
 
   void onTap() {
-    _isPlaying = !_isPlaying;
+    setState(() {
+      _isPlaying = !_isPlaying;
+    });
+    if (_isPlaying) {
+      audioHandler
+          .playFromUri(Uri.parse(widget._settingsController.station!.url));
+    } else {
+      audioHandler.stop();
+    }
   }
 
   @override
@@ -39,7 +48,9 @@ class _PlayerState extends State<Player> {
     );
     final text = Text(widget._settingsController.station!.name);
     final playButton = IconButton(
-      icon: const Icon(Icons.play_arrow_outlined),
+      icon: Icon(
+        _isPlaying ? Icons.pause_outlined : Icons.play_arrow_outlined,
+      ),
       onPressed: onTap,
     );
     return Miniplayer(

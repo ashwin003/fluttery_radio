@@ -42,9 +42,10 @@ dependencies:
   language_picker: ^0.4.1
   infinite_scroll_pagination: ^3.2.0
   miniplayer: ^1.0.1
-  audio_service: ^0.18.7
-  just_audio: ^0.9.29
+  audio_service: ^0.18.9
+  just_audio: ^0.9.32
   audio_service_platform_interface: ^0.1.0
+  just_audio_windows: ^0.2.0
 
 dev_dependencies:
   flutter_test:
