@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:fluttery_radio/controllers/settings_controller.dart';
 import 'package:fluttery_radio/services/station_service.dart';
 import 'package:fluttery_radio/widgets/fallback_image.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
-import '../controllers/settings_controller.dart';
 import '../models/station.dart';
 
 class StationsListScreen extends StatefulWidget {
+  final Station? station;
   final SettingsController settingsController;
-  const StationsListScreen(this.settingsController, {Key? key})
+  const StationsListScreen(this.station, this.settingsController, {Key? key})
       : super(key: key);
 
   @override
@@ -21,25 +22,33 @@ class _StationsListScreenState extends State<StationsListScreen> {
   final PagingController<int, Station> _pagingController =
       PagingController(firstPageKey: 1);
 
-  Future<void> _fetchPage(int pageKey) async {
+  Future<void> _fetchStations(int pageKey, bool replace) async {
     try {
+      final location = widget.settingsController.location.value!;
       final newItems = await _stationService.searchStations(
-        widget.settingsController.location.country,
-        widget.settingsController.location.state,
+        location.country,
+        location.state,
         widget.settingsController.language.name,
         pageKey,
         _pageSize,
       );
       final isLastPage = newItems.length < _pageSize;
+      if (replace) {
+        _pagingController.refresh();
+      }
       if (isLastPage) {
         _pagingController.appendLastPage(newItems);
       } else {
-        final nextPageKey = pageKey + newItems.length;
+        final nextPageKey = pageKey++;
         _pagingController.appendPage(newItems, nextPageKey);
       }
     } catch (error) {
       _pagingController.error = error;
     }
+  }
+
+  Future<void> _fetchPage(int pageKey) async {
+    _fetchStations(pageKey, false);
   }
 
   @override
@@ -48,6 +57,9 @@ class _StationsListScreenState extends State<StationsListScreen> {
       _fetchPage(pageKey);
     });
     super.initState();
+    widget.settingsController.location.addListener(() {
+      _fetchStations(0, true);
+    });
   }
 
   @override
@@ -79,7 +91,7 @@ class _StationsListScreenState extends State<StationsListScreen> {
   ListTile _buildListTile(Station item, double width) {
     return ListTile(
       title: Text(item.name),
-      selected: widget.settingsController.station == item,
+      selected: widget.station == item,
       leading: FallbackImage(item.favicon, width),
       onTap: () {
         widget.settingsController.updateStation(item);

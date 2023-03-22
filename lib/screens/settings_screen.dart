@@ -54,11 +54,11 @@ class SettingsScreen extends StatelessWidget {
       title: const Text(
         'Location',
       ),
-      value: Text(_settingsController.location.asString()),
+      value: Text(_settingsController.location.value?.asString() ?? ""),
       onPressed: (ctx) => showDialog(
         context: ctx,
-        builder: (ctx) => LocationSelectorDialog(_settingsController.location,
-            (country, state) async {
+        builder: (ctx) => LocationSelectorDialog(
+            _settingsController.location.value, (country, state) async {
           final location = Location(country: country, state: state ?? "");
           await _settingsController.updateLocation(location);
         }),

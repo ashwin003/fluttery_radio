@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:miniplayer/miniplayer.dart';
 
-import '../controllers/settings_controller.dart';
+import '../models/station.dart';
 import '../utils/utils.dart';
 
 class SmallPlayer extends StatelessWidget {
-  final SettingsController _settingsController;
   final double playerMaxHeight,
       playerMinHeight,
       miniplayerPercentageDeclaration,
@@ -17,8 +16,8 @@ class SmallPlayer extends StatelessWidget {
   final Text text;
   final Image img;
   final MiniplayerController controller;
+  final Station station;
   const SmallPlayer(
-      this._settingsController,
       this.controller,
       this.playerMaxHeight,
       this.playerMinHeight,
@@ -30,6 +29,7 @@ class SmallPlayer extends StatelessWidget {
       this.playButton,
       this.text,
       this.img,
+      this.station,
       {Key? key})
       : super(key: key);
 
@@ -52,34 +52,10 @@ class SmallPlayer extends StatelessWidget {
                 child: img,
               ),
               Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 10),
-                  child: Opacity(
-                    opacity: elementOpacity,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(_settingsController.station!.name,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium!
-                                .copyWith(fontSize: 16)),
-                        Text(
-                          _settingsController.station!.country,
-                          style:
-                              Theme.of(context).textTheme.bodyMedium!.copyWith(
-                                    color: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium!
-                                        .color!
-                                        .withOpacity(0.55),
-                                  ),
-                        ),
-                      ],
-                    ),
-                  ),
+                child: _buildMainSection(
+                  elementOpacity,
+                  context,
+                  station,
                 ),
               ),
               IconButton(
@@ -98,6 +74,38 @@ class SmallPlayer extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Padding _buildMainSection(
+      double elementOpacity, BuildContext context, Station station) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 10),
+      child: Opacity(
+        opacity: elementOpacity,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(station.name,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium!
+                    .copyWith(fontSize: 16)),
+            Text(
+              station.country,
+              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                    color: Theme.of(context)
+                        .textTheme
+                        .bodyMedium!
+                        .color!
+                        .withOpacity(0.55),
+                  ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

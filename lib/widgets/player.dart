@@ -5,13 +5,17 @@ import 'package:fluttery_radio/widgets/detailed_player.dart';
 import 'package:fluttery_radio/widgets/small_player.dart';
 import 'package:miniplayer/miniplayer.dart';
 
+import '../models/station.dart';
+
 const double playerMinHeight = 70;
 const double playerMaxHeight = 370;
 const miniplayerPercentageDeclaration = 0.2;
 
 class Player extends StatefulWidget {
   final SettingsController _settingsController;
-  const Player(this._settingsController, {Key? key}) : super(key: key);
+  final Station station;
+  const Player(this._settingsController, this.station, {Key? key})
+      : super(key: key);
 
   @override
   State<Player> createState() => _PlayerState();
@@ -20,38 +24,60 @@ class Player extends StatefulWidget {
 class _PlayerState extends State<Player> {
   final ValueNotifier<double> playerExpandProgress =
       ValueNotifier(playerMinHeight);
-  bool _isPlaying = false;
-
   final MiniplayerController controller = MiniplayerController();
 
-  void onTap() {
-    setState(() {
-      _isPlaying = !_isPlaying;
-    });
-    if (_isPlaying) {
-      audioHandler
-          .playFromUri(Uri.parse(widget._settingsController.station!.url));
+  @override
+  void initState() {
+    super.initState();
+    widget._settingsController.isPlaying.addListener(_playingStationListener);
+    widget._settingsController.station.addListener(_playingStationListener);
+    _playingStationListener();
+  }
+
+  void _playingStationListener() {
+    if (widget._settingsController.isPlaying.value) {
+      audioHandler.playFromUri(
+          Uri.parse(widget._settingsController.station.value!.url));
     } else {
       audioHandler.stop();
     }
   }
 
+  void _onTap() {
+    widget._settingsController
+        .updatePlayingStatus(!widget._settingsController.isPlaying.value);
+  }
+
   @override
   Widget build(BuildContext context) {
     final double width = MediaQuery.of(context).size.width;
+    return ValueListenableBuilder(
+      valueListenable: widget._settingsController.isPlaying,
+      builder: (ctx, bool? value, _) => _buildMusicPlayer(
+        width,
+        value ?? false,
+        widget.station,
+      ),
+    );
+  }
+
+  Miniplayer _buildMusicPlayer(double width, bool isPlaying, Station station) {
     final maxImgSize = width * 0.4;
     final img = Image.network(
-      widget._settingsController.station!.favicon,
+      station.favicon,
       errorBuilder: (ctx, ex, st) => Image.network(
         "https://www.shareicon.net/data/256x256/2015/11/01/147855_music_256x256.png",
       ),
     );
-    final text = Text(widget._settingsController.station!.name);
+    final text = Text(station.name);
+    if (!isPlaying) {
+      audioHandler.stop();
+    }
     final playButton = IconButton(
       icon: Icon(
-        _isPlaying ? Icons.pause_outlined : Icons.play_arrow_outlined,
+        isPlaying ? Icons.pause_outlined : Icons.play_arrow_outlined,
       ),
-      onPressed: onTap,
+      onPressed: _onTap,
     );
     return Miniplayer(
       valueNotifier: playerExpandProgress,
@@ -67,15 +93,29 @@ class _PlayerState extends State<Player> {
             ? _buildDetailedPlayer(
                 height, percentage, width, maxImgSize, playButton, text, img)
             : _buildSmallPlayer(
-                height, percentage, width, maxImgSize, playButton, text, img);
+                height,
+                percentage,
+                width,
+                maxImgSize,
+                playButton,
+                text,
+                img,
+                station,
+              );
       },
     );
   }
 
-  Widget _buildSmallPlayer(double height, double percentage, double width,
-      double maxImgSize, IconButton playButton, Text text, Image img) {
+  Widget _buildSmallPlayer(
+      double height,
+      double percentage,
+      double width,
+      double maxImgSize,
+      IconButton playButton,
+      Text text,
+      Image img,
+      Station station) {
     return SmallPlayer(
-        widget._settingsController,
         controller,
         playerMaxHeight,
         playerMinHeight,
@@ -86,7 +126,8 @@ class _PlayerState extends State<Player> {
         maxImgSize,
         playButton,
         text,
-        img);
+        img,
+        station);
   }
 
   Widget _buildDetailedPlayer(double height, double percentage, double width,

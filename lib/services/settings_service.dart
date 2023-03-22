@@ -11,6 +11,7 @@ class SettingsService {
   final String _themePreferencesKey = 'radio-browser-theme',
       _languagePreferencesKey = 'radio-browser-language',
       _locationPreferencesKey = 'radio-browser-location',
+      _isPlayingPreferenceKey = 'radio-browser-playing',
       _activeStationPreferencesKey = 'radio-browser-station';
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
   Future<ThemeMode> themeMode() async {
@@ -55,6 +56,21 @@ class SettingsService {
   Future<void> updateLocation(Location newLocation) async {
     final SharedPreferences prefs = await _prefs;
     prefs.setString(_locationPreferencesKey, json.encode(newLocation));
+  }
+
+  Future<bool> isPlaying() async {
+    final SharedPreferences prefs = await _prefs;
+    try {
+      final jsonObject = json.decode(prefs.getString(_isPlayingPreferenceKey)!);
+      return jsonObject == true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<void> updatePlayingStatus(bool isPlaying) async {
+    final SharedPreferences prefs = await _prefs;
+    prefs.setString(_isPlayingPreferenceKey, isPlaying.toString());
   }
 
   Future<Station?> station() async {

@@ -4,6 +4,9 @@ import 'package:fluttery_radio/screens/settings_screen.dart';
 import 'package:fluttery_radio/screens/stations_list_screen.dart';
 import 'package:fluttery_radio/widgets/player.dart';
 
+import '../models/location.dart';
+import '../models/station.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen(this.settingsController, {Key? key, required this.title})
       : super(key: key);
@@ -26,16 +29,16 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  String _getTitle() {
-    late String title = widget.settingsController.location.asString();
-    return title == "" ? widget.title : title;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_getTitle()),
+        title: ValueListenableBuilder(
+          valueListenable: widget.settingsController.location,
+          builder: (ctx, Location? location, _) => Text(
+            location == null ? "" : location.asString(),
+          ),
+        ),
         actions: [
           IconButton(
             onPressed: () {
@@ -47,25 +50,31 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: widget.settingsController.location.asString() == ""
+      body: widget.settingsController.location.value == null
           ? _buildNoLocationMessage()
-          : Stack(
-              children: [
-                _buildStationsListView(),
-                _buildPlayer(),
-              ],
-            ),
+          : _buildLocationAvailableView(),
     );
   }
 
-  Widget _buildPlayer() {
-    return widget.settingsController.station != null
-        ? Player(widget.settingsController)
+  Widget _buildLocationAvailableView() {
+    return ValueListenableBuilder(
+      valueListenable: widget.settingsController.station,
+      builder: (ctx, Station? station, _) => Stack(children: [
+        _buildStationsListView(station),
+        _buildPlayer(station),
+      ]),
+    );
+  }
+
+  Widget _buildPlayer(Station? station) {
+    return station != null
+        ? Player(widget.settingsController, station)
         : Container();
   }
 
-  Widget _buildStationsListView() {
+  Widget _buildStationsListView(Station? station) {
     return StationsListScreen(
+      station,
       widget.settingsController,
     );
   }
