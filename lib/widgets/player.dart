@@ -69,7 +69,6 @@ class _PlayerState extends State<Player> {
         "https://www.shareicon.net/data/256x256/2015/11/01/147855_music_256x256.png",
       ),
     );
-    final text = Text(station.name);
     if (!isPlaying) {
       audioHandler.stop();
     }
@@ -89,16 +88,19 @@ class _PlayerState extends State<Player> {
       builder: (height, percentage) {
         final bool miniplayer = percentage < miniplayerPercentageDeclaration;
 
-        return !miniplayer
-            ? _buildDetailedPlayer(
-                height, percentage, width, maxImgSize, playButton, text, img)
-            : _buildSmallPlayer(
+        return miniplayer
+            ? _buildSmallPlayer(
                 height,
-                percentage,
+                maxImgSize,
+                playButton,
+                img,
+                station,
+              )
+            : _buildDetailedPlayer(
+                height,
                 width,
                 maxImgSize,
                 playButton,
-                text,
                 img,
                 station,
               );
@@ -106,43 +108,33 @@ class _PlayerState extends State<Player> {
     );
   }
 
-  Widget _buildSmallPlayer(
-      double height,
-      double percentage,
-      double width,
-      double maxImgSize,
-      IconButton playButton,
-      Text text,
-      Image img,
-      Station station) {
+  Widget _buildSmallPlayer(double height, double maxImgSize,
+      IconButton playButton, Image img, Station station) {
     return SmallPlayer(
-        controller,
-        playerMaxHeight,
-        playerMinHeight,
-        miniplayerPercentageDeclaration,
-        height,
-        percentage,
-        width,
-        maxImgSize,
-        playButton,
-        text,
-        img,
-        station);
+      controller,
+      playerMaxHeight,
+      playerMinHeight,
+      miniplayerPercentageDeclaration,
+      height,
+      maxImgSize,
+      playButton,
+      img,
+      station,
+    );
   }
 
-  Widget _buildDetailedPlayer(double height, double percentage, double width,
-      double maxImgSize, IconButton playButton, Text text, Image img) {
+  Widget _buildDetailedPlayer(double height, double width, double maxImgSize,
+      IconButton playButton, Image img, Station station) {
     return DetailedPlayer(
       playerMaxHeight,
       playerMinHeight,
       miniplayerPercentageDeclaration,
       height,
-      percentage,
       width,
       maxImgSize,
       playButton,
-      text,
       img,
+      station,
     );
   }
 }

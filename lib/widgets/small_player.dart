@@ -9,11 +9,8 @@ class SmallPlayer extends StatelessWidget {
       playerMinHeight,
       miniplayerPercentageDeclaration,
       height,
-      percentage,
-      width,
       maxImgSize;
   final IconButton playButton;
-  final Text text;
   final Image img;
   final MiniplayerController controller;
   final Station station;
@@ -23,11 +20,8 @@ class SmallPlayer extends StatelessWidget {
       this.playerMinHeight,
       this.miniplayerPercentageDeclaration,
       this.height,
-      this.percentage,
-      this.width,
       this.maxImgSize,
       this.playButton,
-      this.text,
       this.img,
       this.station,
       {Key? key})

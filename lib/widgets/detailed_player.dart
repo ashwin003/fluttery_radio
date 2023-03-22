@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/station.dart';
 import '../utils/utils.dart';
 
 class DetailedPlayer extends StatelessWidget {
@@ -7,23 +8,21 @@ class DetailedPlayer extends StatelessWidget {
       playerMinHeight,
       miniplayerPercentageDeclaration,
       height,
-      percentage,
       width,
       maxImgSize;
   final IconButton playButton;
-  final Text text;
   final Image img;
+  final Station station;
   const DetailedPlayer(
       this.playerMaxHeight,
       this.playerMinHeight,
       this.miniplayerPercentageDeclaration,
       this.height,
-      this.percentage,
       this.width,
       this.maxImgSize,
       this.playButton,
-      this.text,
       this.img,
+      this.station,
       {Key? key})
       : super(key: key);
 
@@ -69,7 +68,7 @@ class DetailedPlayer extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  Flexible(child: text),
+                  Flexible(child: Text(station.name)),
                   Flexible(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
