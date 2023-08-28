@@ -30,7 +30,6 @@ class MyApp extends StatelessWidget {
             ),
             home: HomeScreen(_settingsController, title: 'Flutter Radio'),
             themeMode: _settingsController.themeMode,
-            useInheritedMediaQuery: true,
             debugShowCheckedModeBanner: false,
           );
         });
