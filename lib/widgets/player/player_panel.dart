@@ -380,6 +380,49 @@ String _stationSubtitle(Station station) {
   return [station.state, country].where((s) => s.isNotEmpty).join(', ');
 }
 
+/// The current track when the stream reports one, otherwise the station's
+/// region. Takes no space at all (gap included) when there's neither, and
+/// crossfades when the track changes.
+class _NowPlayingLine extends StatelessWidget {
+  final String? track;
+  final Station station;
+  final double gap;
+  final int maxLines;
+  final TextStyle? style;
+  const _NowPlayingLine({
+    required this.track,
+    required this.station,
+    required this.gap,
+    required this.maxLines,
+    required this.style,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final text = track ?? _stationSubtitle(station);
+    if (text.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: EdgeInsets.only(top: gap),
+      child: AnimatedSwitcher(
+        duration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : const Duration(milliseconds: 350),
+        layoutBuilder: (current, previous) => Stack(
+          alignment: AlignmentDirectional.topStart,
+          children: [...previous, ?current],
+        ),
+        child: Text(
+          text,
+          key: ValueKey(text),
+          maxLines: maxLines,
+          overflow: TextOverflow.ellipsis,
+          style: style,
+        ),
+      ),
+    );
+  }
+}
+
 /// Large play/pause button with a buffering ring.
 class _PlayPauseButton extends StatelessWidget {
   final SettingsController controller;
@@ -477,11 +520,11 @@ class _MiniBar extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.titleSmall,
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              nowPlaying ?? _stationSubtitle(station),
+                            _NowPlayingLine(
+                              track: nowPlaying,
+                              station: station,
+                              gap: 2,
                               maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),
@@ -602,11 +645,11 @@ class _FullPlayer extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    nowPlaying ?? _stationSubtitle(station),
+                  _NowPlayingLine(
+                    track: nowPlaying,
+                    station: station,
+                    gap: 4,
                     maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: scheme.onSurfaceVariant,
                     ),

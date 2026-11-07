@@ -14,7 +14,7 @@ import 'playback_engine.dart';
 /// Memory stays bounded: the buffer is in `released` mode (played audio is
 /// freed), downloading pauses when more than a few seconds are queued, and
 /// the hard cap is only a safety net.
-class SoloudEngine implements PlaybackEngine, SpectrumSource {
+class SoloudEngine implements PlaybackEngine, SpectrumSource, TrackInfoSource {
   /// Decoded audio is float32 stereo: ~350 KB/s at 44.1 kHz, ~384 KB/s at
   /// 48 kHz. These are in bytes of decoded audio.
   static const _pauseDownloadAbove = 4 << 20; // ~11 s
@@ -40,6 +40,9 @@ class SoloudEngine implements PlaybackEngine, SpectrumSource {
     onCancel: _syncVisualization,
   );
 
+  final _track = StreamController<String?>.broadcast();
+  String? _currentTrack;
+
   Future<void>? _initialization;
   StreamSubscription<AudioVisualizationData>? _visualization;
 
@@ -58,6 +61,9 @@ class SoloudEngine implements PlaybackEngine, SpectrumSource {
 
   @override
   Stream<Float32List> get spectrum => _spectrum.stream;
+
+  @override
+  Stream<String?> get track => _track.stream;
 
   SoLoud get _soloud => SoLoud.instance;
 
@@ -85,7 +91,10 @@ class SoloudEngine implements PlaybackEngine, SpectrumSource {
 
     final client = _client = http.Client();
     final request = http.Request('GET', Uri.parse(url))
-      ..headers['User-Agent'] = userAgent;
+      ..headers['User-Agent'] = userAgent
+      // Ask Shoutcast/Icecast to interleave track titles; SoLoud strips
+      // them from the audio once told the interval (icy-metaint).
+      ..headers['Icy-MetaData'] = '1';
     final http.StreamedResponse response;
     try {
       response = await client.send(request).timeout(_connectTimeout);
@@ -120,7 +129,16 @@ class SoloudEngine implements PlaybackEngine, SpectrumSource {
           isBuffering ? EngineStatus.buffering : EngineStatus.playing,
         );
       },
+      onMetadata: (metadata) {
+        if (session == _session) _setTrack(trackTitle(metadata));
+      },
     );
+    // Must be set before the first chunk, or the metadata blocks would be
+    // decoded as audio.
+    final icyMetaInt = int.tryParse(response.headers['icy-metaint'] ?? '');
+    if (icyMetaInt != null && icyMetaInt > 0) {
+      _soloud.setBufferIcyMetaInt(source, icyMetaInt);
+    }
     _handle = _soloud.play(source);
 
     _download = response.stream.listen(
@@ -140,6 +158,45 @@ class SoloudEngine implements PlaybackEngine, SpectrumSource {
         _fail(session, const UnsupportedStreamException('no audio decoded'));
       }
     });
+  }
+
+  void _setTrack(String? track) {
+    if (track == _currentTrack) return;
+    _currentTrack = track;
+    _track.add(track);
+  }
+
+  /// One display line from whichever metadata the stream carries: ICY
+  /// `StreamTitle` (MP3/AAC, usually already "Artist - Title"), ID3, or Ogg
+  /// comments. Null when there's nothing meaningful.
+  @visibleForTesting
+  static String? trackTitle(AudioMetadata metadata) {
+    // Every section is present (empty for other formats), so take the first
+    // one that actually names something.
+    String? comment(String key) => metadata.oggMetadata?.comments.entries
+        .where((e) => e.key.toUpperCase() == key)
+        .firstOrNull
+        ?.value;
+    final candidates = [
+      (metadata.mp3Metadata?.artist, metadata.mp3Metadata?.title),
+      (metadata.aacMetadata?.artist, metadata.aacMetadata?.title),
+      (comment('ARTIST'), comment('TITLE')),
+    ];
+    for (final (artist, title) in candidates) {
+      final line = _line(artist?.trim() ?? '', title?.trim() ?? '');
+      if (line != null) return line;
+    }
+    return null;
+  }
+
+  static String? _line(String artist, String title) {
+    final line =
+        artist.isNotEmpty && title.isNotEmpty && !title.contains(artist)
+        ? '$artist – $title'
+        : (title.isNotEmpty ? title : artist);
+    // Skip placeholders such as "-" or " - " that some stations send
+    // between songs.
+    return RegExp(r'[\p{L}\p{N}]', unicode: true).hasMatch(line) ? line : null;
   }
 
   void _markStarted() {
@@ -210,6 +267,7 @@ class SoloudEngine implements PlaybackEngine, SpectrumSource {
   @override
   Future<void> stop() async {
     _session++;
+    _setTrack(null);
     _flowControl?.cancel();
     _flowControl = null;
     _startWatchdog?.cancel();
@@ -266,5 +324,6 @@ class SoloudEngine implements PlaybackEngine, SpectrumSource {
     await _visualization?.cancel();
     await _status.close();
     await _spectrum.close();
+    await _track.close();
   }
 }

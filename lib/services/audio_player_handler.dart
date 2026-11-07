@@ -67,6 +67,14 @@ class AudioPlayerHandler extends BaseAudioHandler {
         ),
       );
     }
+    final soloud = _soloud;
+    if (soloud != null) {
+      _subscriptions.add(
+        soloud.track.listen((track) {
+          if (identical(_active, soloud)) _setTrack(track);
+        }),
+      );
+    }
     _broadcastState();
   }
 
@@ -171,7 +179,17 @@ class AudioPlayerHandler extends BaseAudioHandler {
     return isHls ? _fallback : soloud;
   }
 
+  /// Shows the station's current track (from stream metadata) as the media
+  /// item's artist: the in-app player and OS media controls show it in
+  /// place of the station's region, and fall back when it's cleared.
+  void _setTrack(String? track) {
+    final item = mediaItem.value;
+    if (item == null || item.artist == track) return;
+    mediaItem.add(item.copyWith(artist: track));
+  }
+
   Future<void> _halt() async {
+    _setTrack(null);
     _wantsToPlay = false;
     _connecting = false;
     _loadGeneration++;
@@ -190,6 +208,7 @@ class AudioPlayerHandler extends BaseAudioHandler {
     final engine = _engineFor(item);
     final previous = _active;
     _active = engine;
+    if (!identical(engine, _soloud)) _setTrack(null);
     try {
       if (previous != null && !identical(previous, engine)) {
         await previous.stop();

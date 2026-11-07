@@ -215,6 +215,35 @@ void main() {
     );
   });
 
+  testWidgets('track title replaces the region line and falls back', (
+    tester,
+  ) async {
+    await setPhoneSize(tester);
+    final audio = controller.audio;
+    audio.setStation(station);
+    await tester.pumpWidget(app());
+    await tester.pump();
+    final region = find.textContaining(
+      station.state.isNotEmpty
+          ? station.state
+          // ignore: deprecated_member_use
+          : station.country,
+    );
+    expect(region, findsOneWidget);
+
+    audio.mediaItem.add(
+      audio.mediaItem.value!.copyWith(artist: 'Nina Simone – Feeling Good'),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Nina Simone – Feeling Good'), findsOneWidget);
+    expect(region, findsNothing);
+
+    audio.mediaItem.add(audio.mediaItem.value!.copyWith(artist: null));
+    await tester.pumpAndSettle();
+    expect(find.text('Nina Simone – Feeling Good'), findsNothing);
+    expect(region, findsOneWidget);
+  });
+
   testWidgets('loading line shows only while connecting', (tester) async {
     await setPhoneSize(tester);
     await tester.pumpWidget(app());

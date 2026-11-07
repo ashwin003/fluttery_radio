@@ -35,6 +35,13 @@ abstract class SpectrumSource {
   Stream<Float32List> get spectrum;
 }
 
+/// An engine that can report the track a station is currently playing.
+abstract class TrackInfoSource {
+  /// The current track, e.g. "Artist – Title", or null when the station
+  /// reports none (or stops). Only emits on change.
+  Stream<String?> get track;
+}
+
 /// The engine can't play this stream (format, protocol or missing codec),
 /// so another engine should try it. Not worth a reconnect.
 class UnsupportedStreamException implements Exception {
