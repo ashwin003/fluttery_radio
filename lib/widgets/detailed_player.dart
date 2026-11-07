@@ -23,8 +23,7 @@ class DetailedPlayer extends StatelessWidget {
       this.playButton,
       this.img,
       this.station,
-      {Key? key})
-      : super(key: key);
+      {super.key});
 
   @override
   Widget build(BuildContext context) {

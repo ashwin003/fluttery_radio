@@ -4,7 +4,7 @@ import 'controllers/settings_controller.dart';
 import 'screens/home_screen.dart';
 
 class MyApp extends StatelessWidget {
-  const MyApp(this._settingsController, {Key? key}) : super(key: key);
+  const MyApp(this._settingsController, {super.key});
 
   final SettingsController _settingsController;
 

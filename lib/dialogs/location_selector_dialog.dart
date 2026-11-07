@@ -1,4 +1,4 @@
-import 'package:csc_picker/csc_picker.dart';
+import 'package:country_state_city_picker/country_state_city_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../models/location.dart';
@@ -8,8 +8,7 @@ typedef LocationSetterCallback = void Function(String country, String? state);
 class LocationSelectorDialog extends StatefulWidget {
   final LocationSetterCallback callback;
   final Location? location;
-  const LocationSelectorDialog(this.location, this.callback, {Key? key})
-      : super(key: key);
+  const LocationSelectorDialog(this.location, this.callback, {super.key});
 
   @override
   State<LocationSelectorDialog> createState() => _LocationSelectorDialogState();
@@ -50,15 +49,14 @@ class _LocationSelectorDialogState extends State<LocationSelectorDialog> {
     );
   }
 
-  CSCPicker _buildPicker() {
-    return CSCPicker(
-      layout: Layout.vertical,
-      currentCountry: countryValue,
-      currentState: stateValue,
-      showCities: false,
-      onCountryChanged: (v) {
+  Widget _buildPicker() {
+    return SelectState(
+      defaultValue: countryValue.isEmpty ? null : countryValue,
+      defaultState: stateValue,
+      hideCity: true,
+      onCountrySelected: (country) {
         setState(() {
-          countryValue = v.split(' ').last;
+          countryValue = country.name ?? "";
         });
       },
       onStateChanged: (v) {
@@ -66,7 +64,6 @@ class _LocationSelectorDialogState extends State<LocationSelectorDialog> {
           stateValue = v;
         });
       },
-      onCityChanged: (v) {},
     );
   }
 }

@@ -24,8 +24,7 @@ class SmallPlayer extends StatelessWidget {
       this.playButton,
       this.img,
       this.station,
-      {Key? key})
-      : super(key: key);
+      {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -94,7 +93,7 @@ class SmallPlayer extends StatelessWidget {
                         .textTheme
                         .bodyMedium!
                         .color!
-                        .withOpacity(0.55),
+                        .withValues(alpha: 0.55),
                   ),
             ),
           ],

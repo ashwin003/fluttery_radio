@@ -8,7 +8,7 @@ import 'package:fluttery_radio/models/location.dart';
 import 'package:settings_ui/settings_ui.dart';
 
 class SettingsScreen extends StatelessWidget {
-  const SettingsScreen(this._settingsController, {Key? key}) : super(key: key);
+  const SettingsScreen(this._settingsController, {super.key});
   final SettingsController _settingsController;
 
   @override

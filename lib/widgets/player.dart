@@ -14,8 +14,7 @@ const miniplayerPercentageDeclaration = 0.2;
 class Player extends StatefulWidget {
   final SettingsController _settingsController;
   final Station station;
-  const Player(this._settingsController, this.station, {Key? key})
-      : super(key: key);
+  const Player(this._settingsController, this.station, {super.key});
 
   @override
   State<Player> createState() => _PlayerState();
