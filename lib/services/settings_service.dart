@@ -1,21 +1,26 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:fluttery_radio/extensions/language_extensions.dart';
 import 'package:fluttery_radio/models/location.dart';
+import 'package:fluttery_radio/models/station_query.dart';
 import 'package:radio_browser_flutter/radio_browser_flutter.dart' show Station;
-import 'package:language_picker/languages.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsService {
   final String _themePreferencesKey = 'radio-browser-theme',
-      _languagePreferencesKey = 'radio-browser-language',
       _locationPreferencesKey = 'radio-browser-location',
       _isPlayingPreferenceKey = 'radio-browser-playing',
       _activeStationPreferencesKey = 'radio-browser-station',
       _accentColorPreferencesKey = 'radio-browser-accent-color',
       _visualizerPreferencesKey = 'radio-browser-visualizer',
-      _likedStationsPreferencesKey = 'radio-browser-liked-stations';
+      _likedStationsPreferencesKey = 'radio-browser-liked-stations',
+      _likedStationDataPreferencesKey = 'radio-browser-liked-station-data',
+      _sortPreferencesKey = 'radio-browser-sort',
+      _layoutPreferencesKey = 'radio-browser-layout',
+          // A new key: the old "radio-browser-language" setting defaulted to
+          // English for everyone, so it's deliberately not migrated.
+          _languageFilterPreferencesKey =
+          'radio-browser-language-filter';
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
   Future<ThemeMode> themeMode() async {
     final SharedPreferences prefs = await _prefs;
@@ -71,19 +76,65 @@ class SettingsService {
     );
   }
 
-  Future<Language> language() async {
+  /// Full data for liked stations, so they can be listed offline and
+  /// regardless of the selected location.
+  Future<List<Station>> likedStationData() async {
     final SharedPreferences prefs = await _prefs;
-    try {
-      final jsonObject = json.decode(prefs.getString(_languagePreferencesKey)!);
-      return Language.fromMap(jsonObject);
-    } catch (e) {
-      return Languages.english;
+    final stations = <Station>[];
+    for (final raw
+        in prefs.getStringList(_likedStationDataPreferencesKey) ?? []) {
+      try {
+        stations.add(Station.fromJson(json.decode(raw)));
+      } catch (_) {
+        // Skip entries written by an incompatible version.
+      }
     }
+    return stations;
   }
 
-  Future<void> updateLanguage(Language newLanguage) async {
+  Future<void> updateLikedStationData(Iterable<Station> stations) async {
     final SharedPreferences prefs = await _prefs;
-    prefs.setString(_languagePreferencesKey, json.encode(newLanguage.toJson()));
+    await prefs.setStringList(
+      _likedStationDataPreferencesKey,
+      stations.map((s) => json.encode(_stationToApiJson(s))).toList(),
+    );
+  }
+
+  Future<StationSort> stationSort() async {
+    final SharedPreferences prefs = await _prefs;
+    final name = prefs.getString(_sortPreferencesKey);
+    return StationSort.values.asNameMap()[name] ?? StationSort.popular;
+  }
+
+  Future<void> updateStationSort(StationSort sort) async {
+    final SharedPreferences prefs = await _prefs;
+    await prefs.setString(_sortPreferencesKey, sort.name);
+  }
+
+  Future<StationLayout> stationLayout() async {
+    final SharedPreferences prefs = await _prefs;
+    final name = prefs.getString(_layoutPreferencesKey);
+    return StationLayout.values.asNameMap()[name] ?? StationLayout.list;
+  }
+
+  Future<void> updateStationLayout(StationLayout layout) async {
+    final SharedPreferences prefs = await _prefs;
+    await prefs.setString(_layoutPreferencesKey, layout.name);
+  }
+
+  /// The remembered language filter; null = any language.
+  Future<String?> languageFilter() async {
+    final SharedPreferences prefs = await _prefs;
+    return prefs.getString(_languageFilterPreferencesKey);
+  }
+
+  Future<void> updateLanguageFilter(String? language) async {
+    final SharedPreferences prefs = await _prefs;
+    if (language == null) {
+      await prefs.remove(_languageFilterPreferencesKey);
+    } else {
+      await prefs.setString(_languageFilterPreferencesKey, language);
+    }
   }
 
   Future<Location> location() async {
