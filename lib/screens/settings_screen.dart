@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:fluttery_radio/app_scope.dart';
 import 'package:fluttery_radio/controllers/settings_controller.dart';
 import 'package:fluttery_radio/dialogs/accent_color_dialog.dart';
-import 'package:fluttery_radio/dialogs/language_selector_dialog.dart';
 import 'package:fluttery_radio/dialogs/location_pickers.dart';
 import 'package:fluttery_radio/dialogs/theme_selector_dialog.dart';
 import 'package:fluttery_radio/extensions/theme_extensions.dart';
@@ -39,11 +38,7 @@ class SettingsScreen extends StatelessWidget {
             ),
             SettingsSection(
               title: const Text('Stations'),
-              tiles: [
-                _buildCountrySettingsTile(),
-                _buildStateSettingsTile(),
-                _buildLanguageSettingsTile(),
-              ],
+              tiles: [_buildCountrySettingsTile(), _buildStateSettingsTile()],
             ),
             SettingsSection(
               title: const Text('About'),
@@ -196,23 +191,6 @@ class SettingsScreen extends StatelessWidget {
       enabled: !reduceMotion,
       initialValue: _settingsController.showVisualizer && !reduceMotion,
       onToggle: _settingsController.updateShowVisualizer,
-    );
-  }
-
-  SettingsTile _buildLanguageSettingsTile() {
-    return SettingsTile.navigation(
-      leading: const Icon(Icons.language),
-      title: const Text('Language'),
-      value: Text(_settingsController.language.name),
-      onPressed: (ctx) {
-        showDialog(
-          context: ctx,
-          builder: (ctx) => LanguageSelectorDialog(
-            _settingsController.updateLanguage,
-            _settingsController.language,
-          ),
-        );
-      },
     );
   }
 }
