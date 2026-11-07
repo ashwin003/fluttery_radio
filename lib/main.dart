@@ -1,6 +1,7 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttery_radio/services/audio_player_handler.dart';
+import 'package:radio_browser_flutter/radio_browser_flutter.dart';
 import 'app.dart';
 import 'controllers/settings_controller.dart';
 import 'services/settings_service.dart';
@@ -8,6 +9,7 @@ import 'services/settings_service.dart';
 late AudioHandler audioHandler;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await RadioBrowserClient.initialize('FlutteryRadio/1.0.0');
   audioHandler = await AudioService.init(
     builder: () => AudioPlayerHandler(),
     config: const AudioServiceConfig(
@@ -18,7 +20,5 @@ void main() async {
   );
   final settingsController = SettingsController(SettingsService());
   await settingsController.loadSettings();
-  runApp(MyApp(
-    settingsController,
-  ));
+  runApp(MyApp(settingsController));
 }

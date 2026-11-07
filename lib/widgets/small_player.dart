@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:miniplayer/miniplayer.dart';
 
-import '../models/station.dart';
+import 'package:radio_browser_flutter/radio_browser_flutter.dart' show Station;
 import '../utils/utils.dart';
 
 class SmallPlayer extends StatelessWidget {
@@ -15,24 +15,25 @@ class SmallPlayer extends StatelessWidget {
   final MiniplayerController controller;
   final Station station;
   const SmallPlayer(
-      this.controller,
-      this.playerMaxHeight,
-      this.playerMinHeight,
-      this.miniplayerPercentageDeclaration,
-      this.height,
-      this.maxImgSize,
-      this.playButton,
-      this.img,
-      this.station,
-      {super.key});
+    this.controller,
+    this.playerMaxHeight,
+    this.playerMinHeight,
+    this.miniplayerPercentageDeclaration,
+    this.height,
+    this.maxImgSize,
+    this.playButton,
+    this.img,
+    this.station, {
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
     final percentageMiniplayer = percentageFromValueInRange(
-        min: playerMinHeight,
-        max:
-            playerMaxHeight * miniplayerPercentageDeclaration + playerMinHeight,
-        value: height);
+      min: playerMinHeight,
+      max: playerMaxHeight * miniplayerPercentageDeclaration + playerMinHeight,
+      value: height,
+    );
 
     final elementOpacity = 1 - 1 * percentageMiniplayer;
     return Column(
@@ -45,23 +46,17 @@ class SmallPlayer extends StatelessWidget {
                 child: img,
               ),
               Expanded(
-                child: _buildMainSection(
-                  elementOpacity,
-                  context,
-                  station,
-                ),
+                child: _buildMainSection(elementOpacity, context, station),
               ),
               IconButton(
-                  icon: const Icon(Icons.fullscreen),
-                  onPressed: () {
-                    controller.animateToHeight(state: PanelState.MAX);
-                  }),
+                icon: const Icon(Icons.fullscreen),
+                onPressed: () {
+                  controller.animateToHeight(state: PanelState.MAX);
+                },
+              ),
               Padding(
                 padding: const EdgeInsets.only(right: 3),
-                child: Opacity(
-                  opacity: elementOpacity,
-                  child: playButton,
-                ),
+                child: Opacity(opacity: elementOpacity, child: playButton),
               ),
             ],
           ),
@@ -71,7 +66,10 @@ class SmallPlayer extends StatelessWidget {
   }
 
   Padding _buildMainSection(
-      double elementOpacity, BuildContext context, Station station) {
+    double elementOpacity,
+    BuildContext context,
+    Station station,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(left: 10),
       child: Opacity(
@@ -81,20 +79,20 @@ class SmallPlayer extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(station.name,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyMedium!
-                    .copyWith(fontSize: 16)),
             Text(
+              station.name,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium!.copyWith(fontSize: 16),
+            ),
+            Text(
+              // ignore: deprecated_member_use
               station.country,
               style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                    color: Theme.of(context)
-                        .textTheme
-                        .bodyMedium!
-                        .color!
-                        .withValues(alpha: 0.55),
-                  ),
+                color: Theme.of(
+                  context,
+                ).textTheme.bodyMedium!.color!.withValues(alpha: 0.55),
+              ),
             ),
           ],
         ),

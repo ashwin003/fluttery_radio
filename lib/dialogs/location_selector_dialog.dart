@@ -44,7 +44,7 @@ class _LocationSelectorDialogState extends State<LocationSelectorDialog> {
             Navigator.of(context).pop();
           },
           child: const Text('Save'),
-        )
+        ),
       ],
     );
   }

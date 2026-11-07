@@ -11,27 +11,28 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-        animation: _settingsController,
-        builder: (context, child) {
-          return MaterialApp(
-            title: 'Flutter Demo',
-            theme: ThemeData(
-              colorScheme: ColorScheme.fromSwatch(
-                primarySwatch: Colors.indigo,
-                accentColor: Colors.pinkAccent,
-              ),
+      animation: _settingsController,
+      builder: (context, child) {
+        return MaterialApp(
+          title: 'Flutter Demo',
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSwatch(
+              primarySwatch: Colors.indigo,
+              accentColor: Colors.pinkAccent,
             ),
-            darkTheme: ThemeData(
-              colorScheme: ColorScheme.fromSwatch(
-                primarySwatch: Colors.lime,
-                accentColor: Colors.pinkAccent,
-                brightness: Brightness.dark,
-              ),
+          ),
+          darkTheme: ThemeData(
+            colorScheme: ColorScheme.fromSwatch(
+              primarySwatch: Colors.lime,
+              accentColor: Colors.pinkAccent,
+              brightness: Brightness.dark,
             ),
-            home: HomeScreen(_settingsController, title: 'Flutter Radio'),
-            themeMode: _settingsController.themeMode,
-            debugShowCheckedModeBanner: false,
-          );
-        });
+          ),
+          home: HomeScreen(_settingsController, title: 'Flutter Radio'),
+          themeMode: _settingsController.themeMode,
+          debugShowCheckedModeBanner: false,
+        );
+      },
+    );
   }
 }
