@@ -6,19 +6,36 @@ import 'app.dart';
 import 'controllers/settings_controller.dart';
 import 'services/settings_service.dart';
 
-late AudioHandler audioHandler;
+late AudioPlayerHandler audioHandler;
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await RadioBrowserClient.initialize('FlutteryRadio/1.0.0');
-  audioHandler = await AudioService.init(
-    builder: () => AudioPlayerHandler(),
-    config: const AudioServiceConfig(
-      androidNotificationChannelId: 'com.example.fluttery_radio.channel.audio',
-      androidNotificationChannelName: 'Audio Playback',
-      androidNotificationOngoing: true,
-    ),
+
+  // If OS media controls can't be registered (e.g. no D-Bus session on
+  // Linux), keep the handler anyway so in-app playback still works.
+  final handler = AudioPlayerHandler();
+  try {
+    audioHandler = await AudioService.init(
+      builder: () => handler,
+      config: _audioServiceConfig,
+    );
+  } catch (e) {
+    debugPrint('OS media controls unavailable: $e');
+    audioHandler = handler;
+  }
+  final settingsController = SettingsController(
+    SettingsService(),
+    audioHandler,
   );
-  final settingsController = SettingsController(SettingsService());
   await settingsController.loadSettings();
   runApp(MyApp(settingsController));
 }
+
+const _audioServiceConfig = AudioServiceConfig(
+  // Also used as the MPRIS identity on Linux and SMTC id on Windows.
+  androidNotificationChannelId: 'com.example.fluttery_radio.channel.audio',
+  androidNotificationChannelName: 'Audio Playback',
+  androidNotificationOngoing: true,
+  androidStopForegroundOnPause: true,
+);
