@@ -36,11 +36,13 @@ dependencies:
   infinite_scroll_pagination: ^5.1.1
   miniplayer: ^1.0.1
   audio_service: ^0.18.19
-  country_state_city_picker: ^2.0.0
   radio_browser_flutter: ^0.1.0
   audioplayers: ^6.8.1
   audio_service_mpris: ^0.2.1
   audio_service_win: ^0.0.3
+  dynamic_color: ^2.1.0
+  package_info_plus: ^10.2.2
+  url_launcher: ^6.3.3
 
 dev_dependencies:
   flutter_test:

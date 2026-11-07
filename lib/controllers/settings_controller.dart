@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttery_radio/models/location.dart';
 import 'package:fluttery_radio/services/audio_player_handler.dart';
+import 'package:fluttery_radio/services/country_estimator.dart';
 import 'package:fluttery_radio/services/settings_service.dart';
 import 'package:language_picker/languages.dart';
 
@@ -20,11 +21,22 @@ class SettingsController with ChangeNotifier {
 
   ThemeMode get themeMode => _themeMode;
 
+  Color? _accentColor;
+
+  /// The chosen accent colour, or `null` to follow the system accent.
+  Color? get accentColor => _accentColor;
+
   late Language _language;
 
   Language get language => _language;
 
   late ValueNotifier<Location?> _location;
+
+  bool _locationEstimated = false;
+
+  /// True while the location is a guess from device settings that the user
+  /// hasn't confirmed or changed.
+  bool get isLocationEstimated => _locationEstimated;
 
   ValueListenable<Location?> get location => _location;
 
@@ -38,8 +50,18 @@ class SettingsController with ChangeNotifier {
 
   Future<void> loadSettings() async {
     _themeMode = await _settingsService.themeMode();
+    _accentColor = await _settingsService.accentColor();
     _language = await _settingsService.language();
-    _location = ValueNotifier(await _settingsService.location());
+    var location = await _settingsService.location();
+    if (location.country.isEmpty) {
+      // Not persisted: keeps following the device until the user chooses.
+      final estimate = estimateLocationFromDevice();
+      if (estimate != null) {
+        location = estimate;
+        _locationEstimated = true;
+      }
+    }
+    _location = ValueNotifier(location);
     _station = ValueNotifier(await _settingsService.station());
     _isPlaying = ValueNotifier(false);
 
@@ -69,6 +91,15 @@ class SettingsController with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateAccentColor(Color? newAccentColor) async {
+    if (newAccentColor?.toARGB32() == _accentColor?.toARGB32()) return;
+
+    _accentColor = newAccentColor;
+    notifyListeners();
+
+    await _settingsService.updateAccentColor(newAccentColor);
+  }
+
   Future<void> updateLanguage(Language? newLanguage) async {
     if (newLanguage == null) return;
     if (newLanguage == _language) return;
@@ -84,6 +115,7 @@ class SettingsController with ChangeNotifier {
     if (newLocation == null) return;
     if (newLocation == _location.value) return;
 
+    _locationEstimated = false;
     _location.value = newLocation;
     _location.notifyListeners();
 

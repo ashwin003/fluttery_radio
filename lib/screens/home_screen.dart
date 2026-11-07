@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fluttery_radio/controllers/settings_controller.dart';
+import 'package:fluttery_radio/dialogs/location_pickers.dart';
 import 'package:fluttery_radio/screens/settings_screen.dart';
 import 'package:fluttery_radio/screens/stations_list_screen.dart';
 import 'package:fluttery_radio/widgets/player.dart';
@@ -44,7 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: widget.settingsController.location.value == null
+      body: (widget.settingsController.location.value?.country ?? '').isEmpty
           ? _buildNoLocationMessage()
           : _buildLocationAvailableView(),
     );
@@ -70,8 +71,30 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildNoLocationMessage() {
-    return const Center(
-      child: Text('Please select a country for listing radio stations'),
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.radio, size: 64),
+            const SizedBox(height: 16),
+            const Text(
+              'Choose a country to see its radio stations',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              icon: const Icon(Icons.flag_outlined),
+              label: const Text('Choose country'),
+              onPressed: () async {
+                await chooseCountry(context, widget.settingsController);
+                if (mounted) setState(() {});
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

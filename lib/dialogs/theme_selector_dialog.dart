@@ -3,6 +3,7 @@ import 'package:fluttery_radio/extensions/theme_extensions.dart';
 
 typedef ThemeSetterCallback = void Function(ThemeMode? themeMode);
 
+/// Single-tap theme picker: choosing an option applies it and closes.
 class ThemeSelectorDialog extends StatelessWidget {
   final ThemeMode _theme;
   final ThemeSetterCallback _callback;
@@ -10,28 +11,23 @@ class ThemeSelectorDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return SimpleDialog(
       title: const Text('Theme'),
-      content: DropdownButton<ThemeMode>(
-        // Read the selected themeMode from the controller
-        value: _theme,
-        // Call the updateThemeMode method any time the user selects a theme.
-        onChanged: _callback,
-        items: ThemeMode.values
-            .map(
-              (theme) =>
-                  DropdownMenuItem(value: theme, child: Text(theme.asString())),
-            )
-            .toList(),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () {
+      children: ThemeMode.values.map((mode) {
+        final selected = mode == _theme;
+        return ListTile(
+          leading: Icon(mode.icon),
+          title: Text(mode.label),
+          subtitle: Text(mode.description),
+          selected: selected,
+          trailing: selected ? const Icon(Icons.check) : null,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+          onTap: () {
+            _callback(mode);
             Navigator.of(context).pop();
           },
-          child: const Text('Close'),
-        ),
-      ],
+        );
+      }).toList(),
     );
   }
 }
