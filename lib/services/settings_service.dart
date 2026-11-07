@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fluttery_radio/extensions/language_extensions.dart';
 import 'package:fluttery_radio/models/location.dart';
-import 'package:fluttery_radio/models/station.dart';
+import 'package:radio_browser_flutter/radio_browser_flutter.dart' show Station;
 import 'package:language_picker/languages.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -76,8 +76,9 @@ class SettingsService {
   Future<Station?> station() async {
     final SharedPreferences prefs = await _prefs;
     try {
-      final jsonObject =
-          json.decode(prefs.getString(_activeStationPreferencesKey)!);
+      final jsonObject = json.decode(
+        prefs.getString(_activeStationPreferencesKey)!,
+      );
       return Station.fromJson(jsonObject);
     } catch (e) {
       return null;
@@ -88,7 +89,21 @@ class SettingsService {
     final SharedPreferences prefs = await _prefs;
     prefs.setString(
       _activeStationPreferencesKey,
-      json.encode(station.toJson()),
+      json.encode(_stationToApiJson(station)),
     );
+  }
+
+  /// [Station.toJson] writes lists and booleans, but [Station.fromJson] expects
+  /// the API's format (comma-separated strings and 0/1 integers), so convert
+  /// before persisting to allow the station to be read back.
+  Map<String, dynamic> _stationToApiJson(Station station) {
+    final jsonObject = station.toJson();
+    for (final key in ['tags', 'language', 'languagecodes']) {
+      jsonObject[key] = (jsonObject[key] as List).join(',');
+    }
+    for (final key in ['hls', 'lastcheckok', 'ssl_error']) {
+      jsonObject[key] = jsonObject[key] == true ? 1 : 0;
+    }
+    return jsonObject;
   }
 }

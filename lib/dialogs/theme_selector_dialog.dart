@@ -19,10 +19,8 @@ class ThemeSelectorDialog extends StatelessWidget {
         onChanged: _callback,
         items: ThemeMode.values
             .map(
-              (theme) => DropdownMenuItem(
-                value: theme,
-                child: Text(theme.asString()),
-              ),
+              (theme) =>
+                  DropdownMenuItem(value: theme, child: Text(theme.asString())),
             )
             .toList(),
       ),

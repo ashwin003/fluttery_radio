@@ -3,7 +3,7 @@ import 'package:fluttery_radio/controllers/settings_controller.dart';
 import 'package:fluttery_radio/services/station_service.dart';
 import 'package:fluttery_radio/widgets/fallback_image.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
-import '../models/station.dart';
+import 'package:radio_browser_flutter/radio_browser_flutter.dart' show Station;
 
 class StationsListScreen extends StatefulWidget {
   final Station? station;
@@ -20,13 +20,13 @@ class _StationsListScreenState extends State<StationsListScreen> {
 
   late final PagingController<int, Station> _pagingController =
       PagingController(
-    getNextPageKey: (state) {
-      final lastPage = state.pages?.lastOrNull;
-      if (lastPage != null && lastPage.length < _pageSize) return null;
-      return state.nextIntPageKey;
-    },
-    fetchPage: _fetchStations,
-  );
+        getNextPageKey: (state) {
+          final lastPage = state.pages?.lastOrNull;
+          if (lastPage != null && lastPage.length < _pageSize) return null;
+          return state.nextIntPageKey;
+        },
+        fetchPage: _fetchStations,
+      );
 
   Future<List<Station>> _fetchStations(int pageKey) {
     final location = widget.settingsController.location.value!;
@@ -62,9 +62,7 @@ class _StationsListScreenState extends State<StationsListScreen> {
 
   Widget _buildRefreshableListView(double width) {
     return RefreshIndicator(
-      onRefresh: () => Future.sync(
-        () => _pagingController.refresh(),
-      ),
+      onRefresh: () => Future.sync(() => _pagingController.refresh()),
       child: _buildListView(width),
     );
   }
@@ -88,7 +86,7 @@ class _StationsListScreenState extends State<StationsListScreen> {
     return ListTile(
       title: Text(item.name),
       selected: widget.station == item,
-      leading: FallbackImage(item.favicon, width),
+      leading: FallbackImage(item.favicon.toString(), width),
       onTap: () {
         widget.settingsController.updateStation(item);
       },

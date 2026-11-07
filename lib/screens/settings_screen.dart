@@ -14,54 +14,40 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: const Text(
-            'Settings',
+      appBar: AppBar(title: const Text('Settings')),
+      body: SettingsList(
+        sections: [
+          SettingsSection(
+            title: const Text('Appearance'),
+            tiles: [_buildThemeSettingsTile()],
           ),
-        ),
-        body: SettingsList(
-          sections: [
-            SettingsSection(
-              title: const Text('Appearance'),
-              tiles: [
-                _buildThemeSettingsTile(),
-              ],
-            ),
-            SettingsSection(
-              title: const Text(
-                'General',
-              ),
-              tiles: [
-                _buildLanguageSettingsTile(),
-                _buildLocationSettingsTile()
-              ],
-            ),
-            SettingsSection(
-              title: const Text(
-                'About',
-              ),
-              tiles: [
-                _buildVersionSettingsTile(),
-              ],
-            )
-          ],
-        ));
+          SettingsSection(
+            title: const Text('General'),
+            tiles: [_buildLanguageSettingsTile(), _buildLocationSettingsTile()],
+          ),
+          SettingsSection(
+            title: const Text('About'),
+            tiles: [_buildVersionSettingsTile()],
+          ),
+        ],
+      ),
+    );
   }
 
   SettingsTile _buildLocationSettingsTile() {
     return SettingsTile.navigation(
       leading: const Icon(Icons.location_pin),
-      title: const Text(
-        'Location',
-      ),
+      title: const Text('Location'),
       value: Text(_settingsController.location.value?.asString() ?? ""),
       onPressed: (ctx) => showDialog(
         context: ctx,
         builder: (ctx) => LocationSelectorDialog(
-            _settingsController.location.value, (country, state) async {
-          final location = Location(country: country, state: state ?? "");
-          await _settingsController.updateLocation(location);
-        }),
+          _settingsController.location.value,
+          (country, state) async {
+            final location = Location(country: country, state: state ?? "");
+            await _settingsController.updateLocation(location);
+          },
+        ),
         barrierDismissible: false,
       ),
     );
@@ -104,7 +90,9 @@ class SettingsScreen extends StatelessWidget {
         showDialog(
           context: ctx,
           builder: (ctx) => LanguageSelectorDialog(
-              _settingsController.updateLanguage, _settingsController.language),
+            _settingsController.updateLanguage,
+            _settingsController.language,
+          ),
         );
       },
     );

@@ -4,7 +4,7 @@ import 'package:fluttery_radio/models/location.dart';
 import 'package:fluttery_radio/services/settings_service.dart';
 import 'package:language_picker/languages.dart';
 
-import '../models/station.dart';
+import 'package:radio_browser_flutter/radio_browser_flutter.dart' show Station;
 
 class SettingsController with ChangeNotifier {
   final SettingsService _settingsService;

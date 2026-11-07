@@ -5,7 +5,7 @@ import 'package:fluttery_radio/screens/stations_list_screen.dart';
 import 'package:fluttery_radio/widgets/player.dart';
 
 import '../models/location.dart';
-import '../models/station.dart';
+import 'package:radio_browser_flutter/radio_browser_flutter.dart' show Station;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen(this.settingsController, {super.key, required this.title});
@@ -22,9 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
     showGeneralDialog(
       context: context,
       pageBuilder: (c, a, s) => SettingsScreen(widget.settingsController),
-      transitionDuration: const Duration(
-        milliseconds: 500,
-      ),
+      transitionDuration: const Duration(milliseconds: 500),
     );
   }
 
@@ -34,18 +32,15 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: ValueListenableBuilder(
           valueListenable: widget.settingsController.location,
-          builder: (ctx, Location? location, _) => Text(
-            location == null ? "" : location.asString(),
-          ),
+          builder: (ctx, Location? location, _) =>
+              Text(location == null ? "" : location.asString()),
         ),
         actions: [
           IconButton(
             onPressed: () {
               _displayDialog(context);
             },
-            icon: const Icon(
-              Icons.settings,
-            ),
+            icon: const Icon(Icons.settings),
           ),
         ],
       ),
@@ -58,10 +53,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildLocationAvailableView() {
     return ValueListenableBuilder(
       valueListenable: widget.settingsController.station,
-      builder: (ctx, Station? station, _) => Stack(children: [
-        _buildStationsListView(station),
-        _buildPlayer(station),
-      ]),
+      builder: (ctx, Station? station, _) => Stack(
+        children: [_buildStationsListView(station), _buildPlayer(station)],
+      ),
     );
   }
 
@@ -72,17 +66,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildStationsListView(Station? station) {
-    return StationsListScreen(
-      station,
-      widget.settingsController,
-    );
+    return StationsListScreen(station, widget.settingsController);
   }
 
   Widget _buildNoLocationMessage() {
     return const Center(
-      child: Text(
-        'Please select a country for listing radio stations',
-      ),
+      child: Text('Please select a country for listing radio stations'),
     );
   }
 }
