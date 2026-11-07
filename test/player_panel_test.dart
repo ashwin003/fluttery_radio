@@ -23,7 +23,10 @@ void main() {
     station = Station.fromJson(
       json.decode(File('test/fixtures/station.json').readAsStringSync()),
     );
-    controller = SettingsController(SettingsService(), AudioPlayerHandler());
+    controller = SettingsController(
+      SettingsService(),
+      AudioPlayerHandler(useSoloud: false),
+    );
     await controller.loadSettings();
   });
 

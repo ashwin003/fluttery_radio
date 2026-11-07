@@ -185,8 +185,9 @@ class SettingsScreen extends StatelessWidget {
       leading: const Icon(Icons.graphic_eq),
       title: const Text('Visualiser'),
       description: const Text(
-        'Animated bars and glow in the full-screen player. Decorative: not '
-        'driven by the audio. Off when your system asks to reduce motion.',
+        'Animated bars and glow in the full-screen player. For most '
+        'stations the bars follow the audio. Off when your system asks to '
+        'reduce motion.',
       ),
       enabled: !reduceMotion,
       initialValue: _settingsController.showVisualizer && !reduceMotion,

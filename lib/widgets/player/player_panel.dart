@@ -624,7 +624,10 @@ class _FullPlayer extends StatelessWidget {
                               child: Center(
                                 child: SizedBox(
                                   height: 72,
-                                  child: Visualizer(active: state.playing),
+                                  child: Visualizer(
+                                    active: state.playing,
+                                    spectrum: controller.audio.spectrum,
+                                  ),
                                 ),
                               ),
                             )
