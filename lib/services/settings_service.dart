@@ -12,7 +12,8 @@ class SettingsService {
       _languagePreferencesKey = 'radio-browser-language',
       _locationPreferencesKey = 'radio-browser-location',
       _isPlayingPreferenceKey = 'radio-browser-playing',
-      _activeStationPreferencesKey = 'radio-browser-station';
+      _activeStationPreferencesKey = 'radio-browser-station',
+      _accentColorPreferencesKey = 'radio-browser-accent-color';
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
   Future<ThemeMode> themeMode() async {
     final SharedPreferences prefs = await _prefs;
@@ -26,6 +27,22 @@ class SettingsService {
   Future<void> updateThemeMode(ThemeMode theme) async {
     final SharedPreferences prefs = await _prefs;
     prefs.setInt(_themePreferencesKey, theme.index);
+  }
+
+  /// `null` means follow the system accent colour.
+  Future<Color?> accentColor() async {
+    final SharedPreferences prefs = await _prefs;
+    final value = prefs.getInt(_accentColorPreferencesKey);
+    return value == null ? null : Color(value);
+  }
+
+  Future<void> updateAccentColor(Color? color) async {
+    final SharedPreferences prefs = await _prefs;
+    if (color == null) {
+      await prefs.remove(_accentColorPreferencesKey);
+    } else {
+      await prefs.setInt(_accentColorPreferencesKey, color.toARGB32());
+    }
   }
 
   Future<Language> language() async {

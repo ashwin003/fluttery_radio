@@ -31,8 +31,7 @@ class _StationsListScreenState extends State<StationsListScreen> {
   Future<List<Station>> _fetchStations(int pageKey) {
     final location = widget.settingsController.location.value!;
     return _stationService.searchStations(
-      location.country,
-      location.state,
+      location,
       widget.settingsController.language.name,
       pageKey,
       _pageSize,

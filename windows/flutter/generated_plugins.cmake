@@ -5,6 +5,8 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   audio_service_win
   audioplayers_windows
+  dynamic_color
+  url_launcher_windows
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
