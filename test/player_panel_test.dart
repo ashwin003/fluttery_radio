@@ -1,6 +1,7 @@
 import 'package:audio_service/audio_service.dart';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -213,6 +214,42 @@ void main() {
       find.byType(MaterialApp),
       'panel_expanded_landscape_phone',
     );
+  });
+
+  test('player text stays readable over any artwork colour', () {
+    double contrast(Color a, Color b) {
+      final (la, lb) = (a.computeLuminance(), b.computeLuminance());
+      return (math.max(la, lb) + 0.05) / (math.min(la, lb) + 0.05);
+    }
+
+    // Includes the charcoal from a real logo that made text unreadable.
+    const artwork = [
+      Colors.black,
+      Colors.white,
+      Color(0xFF2A2F2E),
+      Colors.red,
+      Colors.yellow,
+      Colors.blue,
+      Colors.green,
+      Color(0xFF800080),
+    ];
+    for (final colour in artwork) {
+      for (final brightness in Brightness.values) {
+        final scheme = ColorScheme.fromSeed(
+          seedColor: colour,
+          brightness: brightness,
+          dynamicSchemeVariant: DynamicSchemeVariant.content,
+        );
+        final background = playerBackdropTint(scheme);
+        for (final text in [scheme.onSurface, scheme.onSurfaceVariant]) {
+          expect(
+            contrast(text, background),
+            greaterThanOrEqualTo(4.5),
+            reason: '$colour, $brightness',
+          );
+        }
+      }
+    }
   });
 
   testWidgets('track title replaces the region line and falls back', (

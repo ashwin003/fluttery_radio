@@ -317,6 +317,18 @@ class _FullLayout {
   }
 }
 
+/// Top colour of the full player's backdrop: the station's colour as a tint
+/// over [ColorScheme.surface].
+///
+/// Not `primaryContainer`: schemes extracted from artwork keep the
+/// artwork's own tones, so a container can be as dark as the text in a
+/// light theme (e.g. a charcoal logo). A light tint keeps the background
+/// near `surface`, so `onSurface`/`onSurfaceVariant` text stays readable
+/// (at least 4.5:1, see the player panel tests) whatever the artwork.
+@visibleForTesting
+Color playerBackdropTint(ColorScheme scheme) =>
+    Color.alphaBlend(scheme.primary.withValues(alpha: 0.2), scheme.surface);
+
 class _Backdrop extends StatelessWidget {
   final ColorScheme scheme;
   const _Backdrop({required this.scheme});
@@ -328,7 +340,7 @@ class _Backdrop extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [scheme.primaryContainer, scheme.surface],
+          colors: [playerBackdropTint(scheme), scheme.surface],
           stops: const [0, 0.75],
         ),
       ),
