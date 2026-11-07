@@ -13,7 +13,9 @@ class SettingsService {
       _locationPreferencesKey = 'radio-browser-location',
       _isPlayingPreferenceKey = 'radio-browser-playing',
       _activeStationPreferencesKey = 'radio-browser-station',
-      _accentColorPreferencesKey = 'radio-browser-accent-color';
+      _accentColorPreferencesKey = 'radio-browser-accent-color',
+      _visualizerPreferencesKey = 'radio-browser-visualizer',
+      _likedStationsPreferencesKey = 'radio-browser-liked-stations';
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
   Future<ThemeMode> themeMode() async {
     final SharedPreferences prefs = await _prefs;
@@ -43,6 +45,30 @@ class SettingsService {
     } else {
       await prefs.setInt(_accentColorPreferencesKey, color.toARGB32());
     }
+  }
+
+  Future<bool> showVisualizer() async {
+    final SharedPreferences prefs = await _prefs;
+    return prefs.getBool(_visualizerPreferencesKey) ?? true;
+  }
+
+  Future<void> updateShowVisualizer(bool value) async {
+    final SharedPreferences prefs = await _prefs;
+    await prefs.setBool(_visualizerPreferencesKey, value);
+  }
+
+  /// UUIDs of stations the user has liked.
+  Future<Set<String>> likedStations() async {
+    final SharedPreferences prefs = await _prefs;
+    return (prefs.getStringList(_likedStationsPreferencesKey) ?? []).toSet();
+  }
+
+  Future<void> updateLikedStations(Set<String> stationUUIDs) async {
+    final SharedPreferences prefs = await _prefs;
+    await prefs.setStringList(
+      _likedStationsPreferencesKey,
+      stationUUIDs.toList(),
+    );
   }
 
   Future<Language> language() async {

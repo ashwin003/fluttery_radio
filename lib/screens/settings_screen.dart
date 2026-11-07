@@ -34,6 +34,7 @@ class SettingsScreen extends StatelessWidget {
               tiles: [
                 _buildThemeSettingsTile(),
                 _buildAccentColorSettingsTile(context),
+                _buildVisualizerSettingsTile(context),
               ],
             ),
             SettingsSection(
@@ -180,6 +181,21 @@ class SettingsScreen extends StatelessWidget {
       onPressed: (ctx) {
         showDialog(context: ctx, builder: (_) => const AccentColorDialog());
       },
+    );
+  }
+
+  SettingsTile _buildVisualizerSettingsTile(BuildContext context) {
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    return SettingsTile.switchTile(
+      leading: const Icon(Icons.graphic_eq),
+      title: const Text('Visualiser'),
+      description: const Text(
+        'Animated bars and glow in the full-screen player. Decorative: not '
+        'driven by the audio. Off when your system asks to reduce motion.',
+      ),
+      enabled: !reduceMotion,
+      initialValue: _settingsController.showVisualizer && !reduceMotion,
+      onToggle: _settingsController.updateShowVisualizer,
     );
   }
 

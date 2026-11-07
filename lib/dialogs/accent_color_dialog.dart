@@ -14,8 +14,7 @@ class AccentColorDialog extends StatelessWidget {
   }
 
   Widget _buildCustomSwatch(BuildContext context, Color? current) {
-    final isCustom =
-        current != null && AccentColor.nameOf(current) == 'Custom';
+    final isCustom = current != null && AccentColor.nameOf(current) == 'Custom';
     return Tooltip(
       message: 'Custom colour',
       child: Semantics(
@@ -106,8 +105,7 @@ class AccentColorDialog extends StatelessWidget {
                               color: preset.color,
                               size: 44,
                               icon:
-                                  preset.color.toARGB32() ==
-                                      current?.toARGB32()
+                                  preset.color.toARGB32() == current?.toARGB32()
                                   ? Icons.check
                                   : null,
                             ),

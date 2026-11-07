@@ -109,7 +109,9 @@ class AudioPlayerHandler extends BaseAudioHandler {
 
   @override
   Future<void> playFromUri(Uri uri, [Map<String, dynamic>? extras]) =>
-      playMediaItem(MediaItem(id: uri.toString(), title: uri.host, isLive: true));
+      playMediaItem(
+        MediaItem(id: uri.toString(), title: uri.host, isLive: true),
+      );
 
   @override
   Future<void> play() async {
