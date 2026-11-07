@@ -45,7 +45,10 @@ void main() {
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
-    controller = SettingsController(SettingsService(), AudioPlayerHandler());
+    controller = SettingsController(
+      SettingsService(),
+      AudioPlayerHandler(useSoloud: false),
+    );
     await controller.loadSettings();
   });
 

@@ -317,6 +317,18 @@ class _FullLayout {
   }
 }
 
+/// Top colour of the full player's backdrop: the station's colour as a tint
+/// over [ColorScheme.surface].
+///
+/// Not `primaryContainer`: schemes extracted from artwork keep the
+/// artwork's own tones, so a container can be as dark as the text in a
+/// light theme (e.g. a charcoal logo). A light tint keeps the background
+/// near `surface`, so `onSurface`/`onSurfaceVariant` text stays readable
+/// (at least 4.5:1, see the player panel tests) whatever the artwork.
+@visibleForTesting
+Color playerBackdropTint(ColorScheme scheme) =>
+    Color.alphaBlend(scheme.primary.withValues(alpha: 0.2), scheme.surface);
+
 class _Backdrop extends StatelessWidget {
   final ColorScheme scheme;
   const _Backdrop({required this.scheme});
@@ -328,7 +340,7 @@ class _Backdrop extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [scheme.primaryContainer, scheme.surface],
+          colors: [playerBackdropTint(scheme), scheme.surface],
           stops: const [0, 0.75],
         ),
       ),
@@ -378,6 +390,49 @@ String _stationSubtitle(Station station) {
   // ignore: deprecated_member_use
   final country = station.country;
   return [station.state, country].where((s) => s.isNotEmpty).join(', ');
+}
+
+/// The current track when the stream reports one, otherwise the station's
+/// region. Takes no space at all (gap included) when there's neither, and
+/// crossfades when the track changes.
+class _NowPlayingLine extends StatelessWidget {
+  final String? track;
+  final Station station;
+  final double gap;
+  final int maxLines;
+  final TextStyle? style;
+  const _NowPlayingLine({
+    required this.track,
+    required this.station,
+    required this.gap,
+    required this.maxLines,
+    required this.style,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final text = track ?? _stationSubtitle(station);
+    if (text.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: EdgeInsets.only(top: gap),
+      child: AnimatedSwitcher(
+        duration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : const Duration(milliseconds: 350),
+        layoutBuilder: (current, previous) => Stack(
+          alignment: AlignmentDirectional.topStart,
+          children: [...previous, ?current],
+        ),
+        child: Text(
+          text,
+          key: ValueKey(text),
+          maxLines: maxLines,
+          overflow: TextOverflow.ellipsis,
+          style: style,
+        ),
+      ),
+    );
+  }
 }
 
 /// Large play/pause button with a buffering ring.
@@ -477,11 +532,11 @@ class _MiniBar extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.titleSmall,
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              nowPlaying ?? _stationSubtitle(station),
+                            _NowPlayingLine(
+                              track: nowPlaying,
+                              station: station,
+                              gap: 2,
                               maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),
@@ -602,11 +657,11 @@ class _FullPlayer extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    nowPlaying ?? _stationSubtitle(station),
+                  _NowPlayingLine(
+                    track: nowPlaying,
+                    station: station,
+                    gap: 4,
                     maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: scheme.onSurfaceVariant,
                     ),
@@ -624,7 +679,10 @@ class _FullPlayer extends StatelessWidget {
                               child: Center(
                                 child: SizedBox(
                                   height: 72,
-                                  child: Visualizer(active: state.playing),
+                                  child: Visualizer(
+                                    active: state.playing,
+                                    spectrum: controller.audio.spectrum,
+                                  ),
                                 ),
                               ),
                             )

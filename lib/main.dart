@@ -19,7 +19,7 @@ void main() async {
   await RadioBrowserClient.initialize(userAgent);
   // If OS media controls can't be registered (e.g. no D-Bus session on
   // Linux), keep the handler anyway so in-app playback still works.
-  final handler = AudioPlayerHandler();
+  final handler = AudioPlayerHandler(userAgent: userAgent);
   try {
     audioHandler = await AudioService.init(
       builder: () => handler,

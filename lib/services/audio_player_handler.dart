@@ -2,15 +2,20 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:audio_service/audio_service.dart';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_soloud/flutter_soloud.dart' show SoLoudException;
 import 'package:radio_browser_flutter/radio_browser_flutter.dart'
     show RadioBrowserClient, Station;
 
-/// Audio handler tuned for live internet radio, backed by `audioplayers`
-/// (ExoPlayer on Android, AVPlayer on iOS/macOS, GStreamer on Linux, Media
-/// Foundation on Windows, HTML audio on web) so no extra native libraries
-/// need installing.
+import 'playback/audioplayers_engine.dart';
+import 'playback/playback_engine.dart';
+import 'playback/soloud_engine.dart';
+
+/// Audio handler tuned for live internet radio.
+///
+/// Streams play through [SoloudEngine] where possible, which also provides
+/// the spectrum for the visualiser. HLS, web, and anything SoLoud can't
+/// decode fall back to [AudioplayersEngine] (the platform player).
 ///
 /// * Broadcasts [playbackState] and [mediaItem] so that the Android/iOS
 ///   notification & lock screen, Linux MPRIS, Windows SMTC and the in-app UI
@@ -22,12 +27,14 @@ import 'package:radio_browser_flutter/radio_browser_flutter.dart'
 class AudioPlayerHandler extends BaseAudioHandler {
   static const _maxReconnectAttempts = 6;
 
+  final SoloudEngine? _soloud;
+  final AudioplayersEngine _fallback = AudioplayersEngine();
   final List<StreamSubscription<dynamic>> _subscriptions = [];
 
-  /// Created on first playback so startup (and tests) don't touch the
-  /// native player until it's needed.
-  AudioPlayer? _playerInstance;
-  AudioPlayer get _player => _playerInstance ??= _createPlayer();
+  /// Streams SoLoud couldn't play this session; they go to the fallback.
+  final Set<String> _soloudUnsupported = {};
+
+  PlaybackEngine? _active;
 
   /// Whether the user wants audio to be playing. Distinct from the player's
   /// actual state, which may be loading/erroring.
@@ -42,28 +49,43 @@ class AudioPlayerHandler extends BaseAudioHandler {
   int _reconnectAttempts = 0;
   Timer? _reconnectTimer;
 
-  AudioPlayerHandler() {
-    _broadcastState();
-  }
-
-  AudioPlayer _createPlayer() {
-    final player = AudioPlayer();
-    _subscriptions
-      ..add(player.onPlayerStateChanged.listen(_onPlayerState))
-      // A live stream "completing" means the server closed the connection.
-      ..add(player.onPlayerComplete.listen((_) => _onStreamEnded()))
-      ..add(
-        player.eventStream.listen(
-          (_) {},
-          onError: (Object e, [StackTrace? st]) => _onPlaybackError(e),
+  /// [useSoloud] is off on web (CORS limits which stations can be read, and
+  /// the HTML player handles everything) and can be turned off in tests.
+  AudioPlayerHandler({String userAgent = 'FlutteryRadio', bool? useSoloud})
+    : _soloud = (useSoloud ?? !kIsWeb)
+          ? SoloudEngine(userAgent: userAgent)
+          : null {
+    for (final engine in [?_soloud, _fallback]) {
+      _subscriptions.add(
+        engine.status.listen(
+          (s) {
+            if (identical(engine, _active)) _onEngineStatus(s);
+          },
+          onError: (Object e) {
+            if (identical(engine, _active)) _onPlaybackError(e);
+          },
         ),
       );
-    return player;
+    }
+    final soloud = _soloud;
+    if (soloud != null) {
+      _subscriptions.add(
+        soloud.track.listen((track) {
+          if (identical(_active, soloud)) _setTrack(track);
+        }),
+      );
+    }
+    _broadcastState();
   }
 
   // ---------------------------------------------------------------------------
   // Public API
   // ---------------------------------------------------------------------------
+
+  /// FFT magnitudes of what's playing, while it plays through SoLoud.
+  /// Nothing is emitted on the fallback engine; analysis only runs while
+  /// this has listeners.
+  Stream<Float32List> get spectrum => _soloud?.spectrum ?? const Stream.empty();
 
   static MediaItem mediaItemFromStation(Station station) {
     final favicon = station.favicon.toString();
@@ -75,7 +97,7 @@ class AudioPlayerHandler extends BaseAudioHandler {
       genre: station.tags.isEmpty ? null : station.tags.first,
       artUri: favicon.startsWith('http') ? station.favicon : null,
       isLive: true,
-      extras: {'stationUUID': station.stationUUID},
+      extras: {'stationUUID': station.stationUUID, 'hls': station.hls},
     );
   }
 
@@ -146,13 +168,34 @@ class AudioPlayerHandler extends BaseAudioHandler {
   // Internals
   // ---------------------------------------------------------------------------
 
+  PlaybackEngine _engineFor(MediaItem item) {
+    final soloud = _soloud;
+    if (soloud == null || _soloudUnsupported.contains(item.id)) {
+      return _fallback;
+    }
+    final isHls =
+        item.extras?['hls'] == true ||
+        Uri.tryParse(item.id)?.path.toLowerCase().endsWith('.m3u8') == true;
+    return isHls ? _fallback : soloud;
+  }
+
+  /// Shows the station's current track (from stream metadata) as the media
+  /// item's artist: the in-app player and OS media controls show it in
+  /// place of the station's region, and fall back when it's cleared.
+  void _setTrack(String? track) {
+    final item = mediaItem.value;
+    if (item == null || item.artist == track) return;
+    mediaItem.add(item.copyWith(artist: track));
+  }
+
   Future<void> _halt() async {
+    _setTrack(null);
     _wantsToPlay = false;
     _connecting = false;
     _loadGeneration++;
     _resetReconnect();
     _broadcastState();
-    await _playerInstance?.stop();
+    await _active?.stop();
   }
 
   Future<void> _connectAndPlay() async {
@@ -162,40 +205,56 @@ class AudioPlayerHandler extends BaseAudioHandler {
     _connecting = true;
     _broadcastState();
 
+    final engine = _engineFor(item);
+    final previous = _active;
+    _active = engine;
+    if (!identical(engine, _soloud)) _setTrack(null);
     try {
-      await _player.stop();
+      if (previous != null && !identical(previous, engine)) {
+        await previous.stop();
+      }
       if (generation != _loadGeneration || !_wantsToPlay) return;
-      await _player.play(UrlSource(item.id));
-      if (generation != _loadGeneration) return;
-      _connecting = false;
-      _reconnectAttempts = 0;
-      _broadcastState();
+      await engine.play(item.id);
     } catch (e) {
       if (generation != _loadGeneration) return;
       _onPlaybackError(e);
     }
   }
 
-  void _onPlayerState(PlayerState state) {
-    if (state == PlayerState.playing) {
-      _connecting = false;
-      _reconnectAttempts = 0;
+  void _onEngineStatus(EngineStatus status) {
+    switch (status) {
+      case EngineStatus.playing:
+        _connecting = false;
+        _reconnectAttempts = 0;
+      case EngineStatus.buffering:
+        _connecting = _wantsToPlay;
+      case EngineStatus.ended:
+        if (_wantsToPlay) _scheduleReconnect();
+        return;
     }
     _broadcastState();
   }
 
-  void _onStreamEnded() {
-    if (_wantsToPlay) _scheduleReconnect();
-  }
-
   void _onPlaybackError(Object error) {
     debugPrint('Playback error: $error');
+    final item = mediaItem.value;
+    // SoLoud can't play this one: hand it to the platform player right away
+    // instead of burning reconnect attempts on it.
+    if (_wantsToPlay &&
+        item != null &&
+        identical(_active, _soloud) &&
+        (error is UnsupportedStreamException || error is SoLoudException)) {
+      _soloudUnsupported.add(item.id);
+      unawaited(_connectAndPlay());
+      return;
+    }
     if (_wantsToPlay && _reconnectAttempts < _maxReconnectAttempts) {
       _scheduleReconnect();
       return;
     }
     _wantsToPlay = false;
     _connecting = false;
+    unawaited(_active?.stop());
     playbackState.add(
       playbackState.value.copyWith(
         processingState: AudioProcessingState.error,
@@ -261,6 +320,7 @@ class AudioPlayerHandler extends BaseAudioHandler {
     for (final s in _subscriptions) {
       await s.cancel();
     }
-    await _playerInstance?.dispose();
+    await _soloud?.dispose();
+    await _fallback.dispose();
   }
 }
