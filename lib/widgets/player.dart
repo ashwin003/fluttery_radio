@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:fluttery_radio/controllers/settings_controller.dart';
-import 'package:fluttery_radio/main.dart';
 import 'package:fluttery_radio/widgets/detailed_player.dart';
 import 'package:fluttery_radio/widgets/small_player.dart';
 import 'package:miniplayer/miniplayer.dart';
@@ -26,24 +25,6 @@ class _PlayerState extends State<Player> {
   );
   final MiniplayerController controller = MiniplayerController();
 
-  @override
-  void initState() {
-    super.initState();
-    widget._settingsController.isPlaying.addListener(_playingStationListener);
-    widget._settingsController.station.addListener(_playingStationListener);
-    _playingStationListener();
-  }
-
-  void _playingStationListener() {
-    if (widget._settingsController.isPlaying.value) {
-      audioHandler.playFromUri(
-        widget._settingsController.station.value!.urlResolved,
-      );
-    } else {
-      audioHandler.stop();
-    }
-  }
-
   void _onTap() {
     widget._settingsController.updatePlayingStatus(
       !widget._settingsController.isPlaying.value,
@@ -68,9 +49,6 @@ class _PlayerState extends State<Player> {
         "https://www.shareicon.net/data/256x256/2015/11/01/147855_music_256x256.png",
       ),
     );
-    if (!isPlaying) {
-      audioHandler.stop();
-    }
     final playButton = IconButton(
       icon: Icon(isPlaying ? Icons.pause_outlined : Icons.play_arrow_outlined),
       onPressed: _onTap,

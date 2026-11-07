@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttery_radio/models/location.dart';
+import 'package:fluttery_radio/services/audio_player_handler.dart';
 import 'package:fluttery_radio/services/settings_service.dart';
 import 'package:language_picker/languages.dart';
 
@@ -8,7 +11,10 @@ import 'package:radio_browser_flutter/radio_browser_flutter.dart' show Station;
 
 class SettingsController with ChangeNotifier {
   final SettingsService _settingsService;
-  SettingsController(this._settingsService);
+  final AudioPlayerHandler _audioHandler;
+  SettingsController(this._settingsService, this._audioHandler);
+
+  StreamSubscription<bool>? _playbackSubscription;
 
   late ThemeMode _themeMode;
 
@@ -36,6 +42,17 @@ class SettingsController with ChangeNotifier {
     _location = ValueNotifier(await _settingsService.location());
     _station = ValueNotifier(await _settingsService.station());
     _isPlaying = ValueNotifier(false);
+
+    final station = _station.value;
+    if (station != null) _audioHandler.setStation(station);
+
+    // The audio handler is the source of truth: playback may be changed from
+    // the notification, lock screen, headset buttons, MPRIS, SMTC, or by
+    // errors/interruptions, so mirror its state rather than our own intent.
+    _playbackSubscription = _audioHandler.playbackState
+        .map((state) => state.playing)
+        .distinct()
+        .listen((playing) => _isPlaying.value = playing);
 
     notifyListeners();
   }
@@ -77,14 +94,17 @@ class SettingsController with ChangeNotifier {
 
   Future<void> updateStation(Station? newStation) async {
     if (newStation == null) return;
-    if (newStation == _station.value) return;
+    if (newStation == _station.value) {
+      if (!_isPlaying.value) await updatePlayingStatus(true);
+      return;
+    }
 
     _station.value = newStation;
     _station.notifyListeners();
 
     await _settingsService.updateStation(newStation);
 
-    await updatePlayingStatus(true);
+    await _audioHandler.playStation(newStation);
 
     notifyListeners();
   }
@@ -92,11 +112,20 @@ class SettingsController with ChangeNotifier {
   Future<void> updatePlayingStatus(bool newPlayingStatus) async {
     if (newPlayingStatus == _isPlaying.value) return;
 
-    _isPlaying = ValueNotifier(newPlayingStatus);
-    _isPlaying.notifyListeners();
+    // Update optimistically; the playback state stream will correct it.
+    _isPlaying.value = newPlayingStatus;
+    if (newPlayingStatus) {
+      await _audioHandler.play();
+    } else {
+      await _audioHandler.pause();
+    }
 
     await _settingsService.updatePlayingStatus(newPlayingStatus);
+  }
 
-    notifyListeners();
+  @override
+  void dispose() {
+    _playbackSubscription?.cancel();
+    super.dispose();
   }
 }
