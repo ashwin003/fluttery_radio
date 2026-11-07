@@ -8,8 +8,7 @@ import '../models/station.dart';
 class StationsListScreen extends StatefulWidget {
   final Station? station;
   final SettingsController settingsController;
-  const StationsListScreen(this.station, this.settingsController, {Key? key})
-      : super(key: key);
+  const StationsListScreen(this.station, this.settingsController, {super.key});
 
   @override
   State<StationsListScreen> createState() => _StationsListScreenState();
@@ -19,47 +18,40 @@ class _StationsListScreenState extends State<StationsListScreen> {
   static const _pageSize = 20;
   final StationService _stationService = StationService();
 
-  final PagingController<int, Station> _pagingController =
-      PagingController(firstPageKey: 1);
+  late final PagingController<int, Station> _pagingController =
+      PagingController(
+    getNextPageKey: (state) {
+      final lastPage = state.pages?.lastOrNull;
+      if (lastPage != null && lastPage.length < _pageSize) return null;
+      return state.nextIntPageKey;
+    },
+    fetchPage: _fetchStations,
+  );
 
-  Future<void> _fetchStations(int pageKey, bool replace) async {
-    try {
-      final location = widget.settingsController.location.value!;
-      final newItems = await _stationService.searchStations(
-        location.country,
-        location.state,
-        widget.settingsController.language.name,
-        pageKey,
-        _pageSize,
-      );
-      final isLastPage = newItems.length < _pageSize;
-      if (replace) {
-        _pagingController.refresh();
-      }
-      if (isLastPage) {
-        _pagingController.appendLastPage(newItems);
-      } else {
-        final nextPageKey = pageKey++;
-        _pagingController.appendPage(newItems, nextPageKey);
-      }
-    } catch (error) {
-      _pagingController.error = error;
-    }
+  Future<List<Station>> _fetchStations(int pageKey) {
+    final location = widget.settingsController.location.value!;
+    return _stationService.searchStations(
+      location.country,
+      location.state,
+      widget.settingsController.language.name,
+      pageKey,
+      _pageSize,
+    );
   }
 
-  Future<void> _fetchPage(int pageKey) async {
-    _fetchStations(pageKey, false);
-  }
+  void _onLocationChanged() => _pagingController.refresh();
 
   @override
   void initState() {
-    _pagingController.addPageRequestListener((pageKey) {
-      _fetchPage(pageKey);
-    });
     super.initState();
-    widget.settingsController.location.addListener(() {
-      _fetchStations(0, true);
-    });
+    widget.settingsController.location.addListener(_onLocationChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.settingsController.location.removeListener(_onLocationChanged);
+    _pagingController.dispose();
+    super.dispose();
   }
 
   @override
@@ -77,13 +69,17 @@ class _StationsListScreenState extends State<StationsListScreen> {
     );
   }
 
-  PagedListView<int, Station> _buildListView(double width) {
-    return PagedListView<int, Station>(
-      pagingController: _pagingController,
-      builderDelegate: PagedChildBuilderDelegate<Station>(
-        animateTransitions: true,
-        transitionDuration: const Duration(milliseconds: 500),
-        itemBuilder: (context, item, index) => _buildListTile(item, width),
+  Widget _buildListView(double width) {
+    return PagingListener<int, Station>(
+      controller: _pagingController,
+      builder: (context, state, fetchNextPage) => PagedListView<int, Station>(
+        state: state,
+        fetchNextPage: fetchNextPage,
+        builderDelegate: PagedChildBuilderDelegate<Station>(
+          animateTransitions: true,
+          transitionDuration: const Duration(milliseconds: 500),
+          itemBuilder: (context, item, index) => _buildListTile(item, width),
+        ),
       ),
     );
   }

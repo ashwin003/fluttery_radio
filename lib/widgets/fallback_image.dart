@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class FallbackImage extends StatelessWidget {
   final String uri;
   final double width;
-  const FallbackImage(this.uri, this.width, {Key? key}) : super(key: key);
+  const FallbackImage(this.uri, this.width, {super.key});
 
   @override
   Widget build(BuildContext context) {

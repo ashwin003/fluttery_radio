@@ -7,8 +7,7 @@ typedef LanguageSetterCallback = void Function(Language language);
 class LanguageSelectorDialog extends StatelessWidget {
   final LanguageSetterCallback callback;
   final Language? initialValue;
-  const LanguageSelectorDialog(this.callback, this.initialValue, {Key? key})
-      : super(key: key);
+  const LanguageSelectorDialog(this.callback, this.initialValue, {super.key});
 
   @override
   Widget build(BuildContext context) {

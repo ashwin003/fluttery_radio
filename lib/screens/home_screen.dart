@@ -8,8 +8,7 @@ import '../models/location.dart';
 import '../models/station.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen(this.settingsController, {Key? key, required this.title})
-      : super(key: key);
+  const HomeScreen(this.settingsController, {super.key, required this.title});
 
   final String title;
   final SettingsController settingsController;

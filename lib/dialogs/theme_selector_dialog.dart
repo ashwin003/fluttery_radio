@@ -6,8 +6,7 @@ typedef ThemeSetterCallback = void Function(ThemeMode? themeMode);
 class ThemeSelectorDialog extends StatelessWidget {
   final ThemeMode _theme;
   final ThemeSetterCallback _callback;
-  const ThemeSelectorDialog(this._theme, this._callback, {Key? key})
-      : super(key: key);
+  const ThemeSelectorDialog(this._theme, this._callback, {super.key});
 
   @override
   Widget build(BuildContext context) {
