@@ -6,6 +6,7 @@ import 'package:fluttery_radio/dialogs/location_pickers.dart';
 import 'package:fluttery_radio/dialogs/theme_selector_dialog.dart';
 import 'package:fluttery_radio/extensions/theme_extensions.dart';
 import 'package:fluttery_radio/models/accent_color.dart';
+import 'package:fluttery_radio/widgets/themed_settings_list.dart';
 import 'package:settings_ui/settings_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -26,7 +27,7 @@ class SettingsScreen extends StatelessWidget {
           _settingsController,
           _settingsController.location,
         ]),
-        builder: (context, _) => SettingsList(
+        builder: (context, _) => ThemedSettingsList(
           sections: [
             SettingsSection(
               title: const Text('Appearance'),
@@ -182,6 +183,7 @@ class SettingsScreen extends StatelessWidget {
   SettingsTile _buildVisualizerSettingsTile(BuildContext context) {
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     return SettingsTile.switchTile(
+      activeSwitchColor: Theme.of(context).colorScheme.primary,
       leading: const Icon(Icons.graphic_eq),
       title: const Text('Visualiser'),
       description: const Text(
