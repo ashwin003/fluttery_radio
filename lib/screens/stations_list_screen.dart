@@ -1,14 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:fluttery_radio/controllers/settings_controller.dart';
 import 'package:fluttery_radio/services/station_service.dart';
-import 'package:fluttery_radio/widgets/fallback_image.dart';
+import 'package:fluttery_radio/widgets/player/station_artwork.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:radio_browser_flutter/radio_browser_flutter.dart' show Station;
 
 class StationsListScreen extends StatefulWidget {
   final Station? station;
   final SettingsController settingsController;
-  const StationsListScreen(this.station, this.settingsController, {super.key});
+
+  /// Space reserved for the collapsed player so the last items stay visible.
+  final double bottomPadding;
+  const StationsListScreen(
+    this.station,
+    this.settingsController, {
+    super.key,
+    this.bottomPadding = 0,
+  });
 
   @override
   State<StationsListScreen> createState() => _StationsListScreenState();
@@ -72,6 +80,7 @@ class _StationsListScreenState extends State<StationsListScreen> {
       builder: (context, state, fetchNextPage) => PagedListView<int, Station>(
         state: state,
         fetchNextPage: fetchNextPage,
+        padding: EdgeInsets.only(bottom: widget.bottomPadding),
         builderDelegate: PagedChildBuilderDelegate<Station>(
           animateTransitions: true,
           transitionDuration: const Duration(milliseconds: 500),
@@ -85,7 +94,10 @@ class _StationsListScreenState extends State<StationsListScreen> {
     return ListTile(
       title: Text(item.name),
       selected: widget.station == item,
-      leading: FallbackImage(item.favicon.toString(), width),
+      leading: SizedBox.square(
+        dimension: width,
+        child: StationArtwork(item, borderRadius: 6),
+      ),
       onTap: () {
         widget.settingsController.updateStation(item);
       },

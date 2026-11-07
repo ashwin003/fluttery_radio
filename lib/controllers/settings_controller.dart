@@ -8,7 +8,8 @@ import 'package:fluttery_radio/services/country_estimator.dart';
 import 'package:fluttery_radio/services/settings_service.dart';
 import 'package:language_picker/languages.dart';
 
-import 'package:radio_browser_flutter/radio_browser_flutter.dart' show Station;
+import 'package:radio_browser_flutter/radio_browser_flutter.dart'
+    show RadioBrowserClient, Station;
 
 class SettingsController with ChangeNotifier {
   final SettingsService _settingsService;
@@ -25,6 +26,28 @@ class SettingsController with ChangeNotifier {
 
   /// The chosen accent colour, or `null` to follow the system accent.
   Color? get accentColor => _accentColor;
+
+  bool _showVisualizer = true;
+
+  /// User preference for the player visualiser. Widgets must also respect
+  /// the platform's reduce-motion setting (MediaQuery.disableAnimations).
+  bool get showVisualizer => _showVisualizer;
+
+  /// Playback state and now-playing metadata for the player UI.
+  AudioPlayerHandler get audio => _audioHandler;
+
+  Set<String> _likedStations = {};
+
+  /// Stations whose vote radio-browser accepted this session, so the shown
+  /// vote count can include it without refetching the station.
+  final Set<String> _votedThisSession = {};
+
+  bool isLiked(Station station) => _likedStations.contains(station.stationUUID);
+
+  /// The station's radio-browser vote count, including the user's own vote
+  /// if it was registered this session.
+  int voteCount(Station station) =>
+      station.votes + (_votedThisSession.contains(station.stationUUID) ? 1 : 0);
 
   late Language _language;
 
@@ -51,6 +74,8 @@ class SettingsController with ChangeNotifier {
   Future<void> loadSettings() async {
     _themeMode = await _settingsService.themeMode();
     _accentColor = await _settingsService.accentColor();
+    _showVisualizer = await _settingsService.showVisualizer();
+    _likedStations = await _settingsService.likedStations();
     _language = await _settingsService.language();
     var location = await _settingsService.location();
     if (location.country.isEmpty) {
@@ -99,6 +124,43 @@ class SettingsController with ChangeNotifier {
 
     await _settingsService.updateAccentColor(newAccentColor);
   }
+
+  Future<void> updateShowVisualizer(bool value) async {
+    if (value == _showVisualizer) return;
+    _showVisualizer = value;
+    notifyListeners();
+    await _settingsService.updateShowVisualizer(value);
+  }
+
+  /// Likes or unlikes [station]. Likes are stored locally; liking also
+  /// upvotes the station on radio-browser (best effort: the API has no
+  /// "unvote", and allows one vote per IP every 10 minutes).
+  Future<void> toggleLike(Station station) async {
+    final id = station.stationUUID;
+    final liked = !_likedStations.contains(id);
+    _likedStations = {..._likedStations};
+    liked ? _likedStations.add(id) : _likedStations.remove(id);
+    notifyListeners();
+    await _settingsService.updateLikedStations(_likedStations);
+
+    if (!liked || _votedThisSession.contains(id)) return;
+    try {
+      final result = await RadioBrowserClient.instance.stations.registerVote(
+        stationUUID: id,
+      );
+      if (result.ok) {
+        _votedThisSession.add(id);
+        notifyListeners();
+      } else {
+        debugPrint('Vote not counted: ${result.message}');
+      }
+    } catch (e) {
+      debugPrint('Vote failed: $e');
+    }
+  }
+
+  /// Stops playback entirely (vs. pause, which the UI toggles).
+  Future<void> stopPlayback() => _audioHandler.stop();
 
   Future<void> updateLanguage(Language? newLanguage) async {
     if (newLanguage == null) return;

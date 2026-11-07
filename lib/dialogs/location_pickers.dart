@@ -130,10 +130,7 @@ Future<void> chooseCountry(
   SettingsController controller,
 ) async {
   final current = controller.location.value;
-  final country = await pickCountry(
-    context,
-    currentCode: current?.countryCode,
-  );
+  final country = await pickCountry(context, currentCode: current?.countryCode);
   if (country == null || !context.mounted) return;
 
   final sameCountry =

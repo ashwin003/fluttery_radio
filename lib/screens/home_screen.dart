@@ -3,7 +3,7 @@ import 'package:fluttery_radio/controllers/settings_controller.dart';
 import 'package:fluttery_radio/dialogs/location_pickers.dart';
 import 'package:fluttery_radio/screens/settings_screen.dart';
 import 'package:fluttery_radio/screens/stations_list_screen.dart';
-import 'package:fluttery_radio/widgets/player.dart';
+import 'package:fluttery_radio/widgets/player/player_panel.dart';
 
 import '../models/location.dart';
 import 'package:radio_browser_flutter/radio_browser_flutter.dart' show Station;
@@ -29,6 +29,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // The panel sits above the Scaffold so the expanded player can cover the
+    // app bar, like a full-screen "now playing" view.
+    return ValueListenableBuilder(
+      valueListenable: widget.settingsController.station,
+      builder: (context, Station? station, _) => Stack(
+        children: [
+          _buildScaffold(context, station),
+          if (station != null)
+            Positioned.fill(
+              child: PlayerPanel(
+                controller: widget.settingsController,
+                station: station,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context, Station? station) {
     return Scaffold(
       appBar: AppBar(
         title: ValueListenableBuilder(
@@ -47,27 +67,16 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: (widget.settingsController.location.value?.country ?? '').isEmpty
           ? _buildNoLocationMessage()
-          : _buildLocationAvailableView(),
+          : _buildStationsListView(station),
     );
-  }
-
-  Widget _buildLocationAvailableView() {
-    return ValueListenableBuilder(
-      valueListenable: widget.settingsController.station,
-      builder: (ctx, Station? station, _) => Stack(
-        children: [_buildStationsListView(station), _buildPlayer(station)],
-      ),
-    );
-  }
-
-  Widget _buildPlayer(Station? station) {
-    return station != null
-        ? Player(widget.settingsController, station)
-        : Container();
   }
 
   Widget _buildStationsListView(Station? station) {
-    return StationsListScreen(station, widget.settingsController);
+    return StationsListScreen(
+      station,
+      widget.settingsController,
+      bottomPadding: station == null ? 0 : PlayerPanel.collapsedHeight(context),
+    );
   }
 
   Widget _buildNoLocationMessage() {
